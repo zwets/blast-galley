@@ -2,21 +2,51 @@
 
 _Precooked BLAST-related recipes, scripts and utilities_
 
-[Io](http://io.zwets.it/)'s personal collection of small scripts and utilities
-to make the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/) more
-digestible for daily use.  Put here because they may be of use others.
 
-## Cooked up in the blast-galley
+## Introduction
 
-### Taxo: search and browse the NCBI taxonomy
+In the [blast-galley](https://github.com/zwets/blast-galley), 
+[Io](http://io.zwets.it/) cooks up a mishmash of scripts and utilities
+for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
+
+The goal here is not haute cuisine, but simple and wholesome.
+
+
+## What's cooking?
+
+### in-silico-pcr
+
+`in-silico-pcr.sh` is a bash script which tests pairs of PCR primers against a
+local BLAST database and returns the fragments selected by the primers.
+
+The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
+and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
+and probably do it better and faster.
+
+However they report only positives, and I am curious to find out if it is possible
+to also estimate the false negative rate based on just BLAST data.  I am working
+on that now.
+
+The script works (except the false negative extension) and is self-contained; 
+the usual `-h|--help` option provides documentation.
+
+
+### taxo
 
 `taxo` is a small command-line utility to search trough a local copy of the NCBI
 *taxdump* database.  Its main function is to translate between taxonomy IDs (**taxid**)
-and scientific names, in batch or interactively.
+and scientific names, either in batch or interactively.
 
 In interactive mode, `taxo` is a command-line browser for the taxonomy hierarchy.
-Using simple commands it allows you to navigate between nodes, and examine their
+Using simple commands it allows you to navigate between nodes and examine their
 ancestors, siblings, children and descendants.
+
+Taxo is not fast, but it does the job.  It is a `bash` script which uses `grep`,
+`sed` and `awk` against the plain `names.dmp` and `nodes.dmp` files from the
+[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  A much optimised
+version would first load the dmp-files in a lightweight in-memory database, then
+perform the queries against that.
+
 
 #### Non-interactive use
 
