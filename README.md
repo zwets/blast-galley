@@ -7,9 +7,8 @@ _Precooked BLAST-related recipes, scripts and utilities_
 
 In the [blast-galley](https://github.com/zwets/blast-galley), 
 [Io](http://io.zwets.it/) cooks up a mishmash of scripts and utilities
-for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
-
-The goal here is not haute cuisine, but simple and wholesome.
+for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).  
+The goal is not haute cuisine, but simple and nutritious.
 
 
 ## What's cooking?
@@ -21,14 +20,12 @@ local BLAST database and returns the fragments selected by the primers.
 
 The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
 and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
-and probably do it better and faster.
+and probably do it better and faster.  However they report only positives, which
+made me curious if it is possible to estimate the false negative rate for a primer
+using on just BLAST data.
 
-However they report only positives, and I am curious to find out if it is possible
-to also estimate the false negative rate based on just BLAST data.  I am working
-on that now.
-
-The script works (except the false negative extension) and is self-contained; 
-the usual `-h|--help` option provides documentation.
+The script works except for the false negative extension which I am working on
+now.  It is self-contained; the usual `-h|--help` option gives documentation.
 
 
 ### taxo
@@ -47,8 +44,13 @@ Taxo is not fast, but it does the job.  It is a `bash` script which uses `grep`,
 version would first load the dmp-files in a lightweight in-memory database, then
 perform the queries against that.
 
+In case you wonder why I don't just use the [Taxonomy browser](http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Root)
+or [Taxonomy Common Tree](http://www.ncbi.nlm.nih.gov/Taxonomy/CommonTree/wwwcmt.cgi)
+at [NCBI Taxonomy](http://www.ncbi.nlm.nih.gov/guide/taxonomy/): [this](http://io.zwets.it/about)
+may explain.  In my corner of the world, we have the Intermittentnet :-) 
 
-#### Non-interactive use
+
+##### Examples: taxo in non-interactive mode
 
 Searching on name or regular expression:
 
@@ -92,7 +94,7 @@ $ taxo -a 1280
    1280 species      Staphylococcus aureus
 ```
 
-#### Interactive use
+##### Example: taxo in interactive mode
 
 ```
 $ ./taxo -i 644
@@ -148,10 +150,10 @@ Command? c
 
 ### Why the name "blast-galley"?
 
-The galley is the kitchen on a ship.  Kitchens are for turning raw ingredients into digestible food.  
-The juxtaposition of "blast" and "galley" has a nice piratey ring to it.  Pirates must be
-[revered](http://sparrowism.soc.srcf.net/home/pirates.html) for the
-[well-established fact](http://www.forbes.com/sites/erikaandersen/2012/03/23/true-fact-the-lack-of-pirates-is-causing-global-warming)
+The galley is the kitchen on a ship.  Kitchens are for turning raw ingredients
+into digestible food.  The juxtaposition of "blast" and "galley" has a nice
+piratey ring to it.  Pirates must be [revered](http://sparrowism.soc.srcf.net/home/pirates.html)
+for the [well-established fact](http://www.forbes.com/sites/erikaandersen/2012/03/23/true-fact-the-lack-of-pirates-is-causing-global-warming)
 that their presence [attenuates global warming](http://www.venganza.org/about/open-letter/).
 
 ### License
