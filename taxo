@@ -45,6 +45,12 @@
 #  12. hidden subtree root flag (1 or 0)  -- 1 if this subtree has no sequence data yet
 #  13. comments                           -- free-text comments and citations
 
+# Defaults and constants
+
+PRETTY_PRINTFMT='%7d %-12s %s\n'
+TABSEP_PRINTFMT='%s\t%s\t%s\n'
+PRINTFMT="$PRETTY_PRINTFMT"	# Switched to TABSEP if option --tabs is given
+
 # Lookup the scientific name for numeric TAXID in the NAMES file
 taxid_sciname() {
     fgrep '	scientific name	' "$NAMES_DMP" | grep -m 1 "^$1	" | sed -e 's/\t|//g' | cut -f 2
@@ -60,7 +66,7 @@ lookup_taxid() {
         [ $PARENT -eq 1 ] || lookup_taxid $PARENT $2
     fi
     local RANK="$(expr "$NODE_LINE" : '[^|]*|[^|]*|	\([^	]*\)' | sed -e 's/no rank//')"
-    printf "%7d %-12s %s\n" "$1" "$RANK" "$(taxid_sciname $1)"
+    printf "$PRINTFMT" "$1" "$RANK" "$(taxid_sciname $1)"
 }
 
 # Grep for regex NAME through the NAMES file, output tax ID and scientific name
@@ -102,6 +108,7 @@ Usage: $(basename $0) [OPTIONS] [TAXID|NAME|-] ...
                      ancestry.  Same as pressing 'a' in interactive mode.
    -i|--interactive  Enter interactive mode after processing all arguments.
    -q|--quiet        Do not show prompts and other informational output.
+   -t|--tabs         Use TAB rather than fancily aligned output.
    -d|--dir DIR      Directory path to the NCBI taxdump files (see below).
 
   When searching on regex NAME, it is anchored on the left, so prefix '.*'
@@ -118,7 +125,8 @@ Usage: $(basename $0) [OPTIONS] [TAXID|NAME|-] ...
 
 # Parse options
 
-unset TAX_DIR ANCESTRY INTERACTIVE
+unset TAX_DIR ANCESTRY INTERACTIVE 
+PRINTFMT="$PRETTY_PRINTFMT"
 QUIET=0
 
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
@@ -131,6 +139,9 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
         ;;
     -q|--quiet)
         QUIET=1
+        ;;
+    -t|--tabs)
+        PRINTFMT="$TABSEP_PRINTFMT"
         ;;
     -d|--dir)
         shift
@@ -219,7 +230,7 @@ BEGIN {
 }
 
 function prt(i) {
-    printf "%7d %-12s %s\n", i, (TAX[i][IxRank] == "no rank" ? "" : TAX[i][IxRank]), TAX[i][IxName]
+    printf "'$PRINTFMT'", i, (TAX[i][IxRank] == "no rank" ? "" : TAX[i][IxRank]), TAX[i][IxName]
     PRT_COUNTER += 1
 }
 function cur() {
