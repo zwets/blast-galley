@@ -22,10 +22,9 @@ The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
 and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
 and probably do it better and faster.  However they report only positives, which
 made me curious if it is possible to estimate the false negative rate for a primer
-using on just BLAST data.
+using only BLAST data.
 
-The script works except for the false negative extension which I am working on
-now.  It is self-contained; the usual `-h|--help` option gives documentation.
+The script works and is self-contained; the usual `-h|--help` option gives documentation.
 
 
 ### taxo
