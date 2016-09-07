@@ -47,7 +47,7 @@
 
 # Defaults and constants
 
-PRETTY_PRINTFMT='%7d %-12s %s\n'
+PRETTY_PRINTFMT='%7d\040%-12s\040%s\n'
 TABSEP_PRINTFMT='%s\t%s\t%s\n'
 PRINTFMT="$PRETTY_PRINTFMT"	# Switched to TABSEP if option --tabs is given
 
