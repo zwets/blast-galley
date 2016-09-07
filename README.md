@@ -7,11 +7,20 @@ _Precooked BLAST-related recipes, scripts and utilities_
 
 In the [blast-galley](https://github.com/zwets/blast-galley), 
 [Io](http://io.zwets.it/) cooks up a mishmash of scripts and utilities
-for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).  
-The goal is not haute cuisine, but simple and nutritious.
+for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
+
+These tools were developed for my own use, but I've tried to document
+them well (all have `--help`) so they may be useful to anyone.
 
 
 ## What's cooking?
+
+### zblast / zblast-db
+
+Thin wrappers around blast because I keep forgetting the options that do what
+I want, and `blastn -help` is an oxymoron.  For that same reason I maintain
+this [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
+
 
 ### in-silico-pcr
 
@@ -142,10 +151,6 @@ Command? c
 ```
 
 ## Miscellaneous
-
-### Useful links
-
-* [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
 
 ### Why the name "blast-galley"?
 

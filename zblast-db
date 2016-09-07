@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# zblast-db.sh
+# Marco van Zwetselaar <zwets@kcri.ac.tz>
+# 2016-01-14
+# 
+# Wrap blastdbcmd using zwets defaults.
+#
+
+# Defaults
+DATABASE="nt"
+ENTRY="all"
+FORMAT="ogt"
+SEP="\\t"
+
+# Function to write the arguments to stderr if VERBOSE is set
+emit() {
+	if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi
+}
+
+# Function to exit this script with an error message on stderr
+err_exit() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+# Function to show usage information and exit
+usage_exit() {
+	RETVAL=${1:-1}
+	echo
+	echo "Usage: $(basename "$0") [options] [blast-options]"
+	echo
+	echo "  Operations on BLAST databases.  Default is to query all."
+	echo
+	echo "  Options"
+	echo "   -d|--db DB        database (default: $DATABASE)"
+	echo "   -e|--entry ENTRY  entry (default: $ENTRY)"
+	echo "   -f|--format FMT   format (default: $FORMAT)"
+	echo "   -s|--sep CHAR     separator character (default: tab)"
+	echo "   -t|--header       show format header (default: no)"
+	echo "   -v|--verbose      verbose output"
+	echo "   -h|--help         this help"
+	echo
+	echo "  Format specifiers for use with -f"
+	echo "  Note, you can omit the percent sign and separators"
+	echo "   f fasta | s sequence | l length | t title"
+	echo "   o OID   | g GI       | a Accession | P PIG"
+	echo "   T TaxID | L TaxName  | S SciName | m Masks (all)"
+	echo 
+	exit ${1:-1}
+}
+
+# Parse options
+
+unset HEADER
+while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
+	case $1 in
+	--format=*)
+                FORMAT=${1#--format=}
+                ;;
+        -f|--format)
+                shift
+                FORMAT=$1
+                ;;
+	--entry=*)
+                ENTRY=${1#--entry=}
+                ;;
+        -e|--entry)
+                shift
+                ENTRY=$1
+                ;;
+	--db=*|--database=*)
+                DATABASE=${1#--database=}
+                ;;
+        -d|--db|--database)
+                shift
+                DATABASE=$1
+                ;;
+	-t|--header)
+                HEADER=1
+                ;;
+	-h|--help)
+		usage_exit 0
+		;;
+	-v|--verbose)
+		VERBOSE=1
+		;;
+	*) usage_exit
+		;;
+	esac
+	shift
+done
+
+# Check environment for NCBI Blast+
+
+[ -n "$NCBI" ] || [ -n "$BLASTDB" ] || err_exit "either BLASTDB or NCBI must be set (see http://io.zwets.it/blast-cmdline-ref)"
+
+# Output Format options
+
+#%mX 	sequence masking data, where X is an optional comma-separated list of integers to specify the algorithm ID(s) to display (or all masks if absent or invalxd specification). Masking data will be displayed as a series of ‘N-M’ values separated by ‘;’ or the word ‘none’ if none are available.
+
+OUTFMT=$(echo "$FORMAT" | sed -e 's/\(.\)/%\1'$SEP'/g' -e 's/\(.\)$//')
+
+[ -z "$HEADER" ] || echo "OUTFMT"
+
+# Invoke the command
+
+blastdbcmd -entry "$ENTRY" -db "$DATABASE" -outfmt "$OUTFMT"
+
+exit 0
+
