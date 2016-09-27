@@ -22,11 +22,6 @@ I want, and `blastn -help` is an oxymoron.  For that same reason I maintain
 this [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
 
 
-### blastdb-select
-
-Query BLAST database, filtering by taxonomy id and length.
-
-
 ### in-silico-pcr
 
 `in-silico-pcr.sh` is a bash script which tests pairs of PCR primers against a
