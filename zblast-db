@@ -10,7 +10,7 @@
 # Defaults
 DATABASE="nt"
 ENTRY="all"
-FORMAT="oagt"
+FORMAT="oagTlt"
 SEP="\\t"
 
 # Function to write the arguments to stderr if VERBOSE is set
