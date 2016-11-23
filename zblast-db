@@ -30,14 +30,14 @@ usage_exit() {
 	echo
 	echo "Usage: $(basename "$0") [options] [blast-options]"
 	echo
-	echo "  Operations on BLAST databases.  Default is to query all."
+	echo "  Queries on BLAST databases.  Default is to query all entries."
 	echo
 	echo "  Options"
 	echo "   -d|--db DB        database (default: $DATABASE)"
-	echo "   -e|--entry ENTRY  entry (default: $ENTRY)"
-	echo "   -f|--format FMT   format (default: $FORMAT)"
+	echo "   -e|--entry ENTRY  entry to select (default: $ENTRY)"
+	echo "   -o|--output FMT   output format (default: $FORMAT)"
 	echo "   -s|--sep CHAR     separator character (default: tab)"
-	echo "   -t|--header       show format header (default: no)"
+	echo "   -t|--header       prepend header (default: no)"
 	echo "   -v|--verbose      verbose output"
 	echo "   -h|--help         this help"
 	echo
@@ -55,10 +55,10 @@ usage_exit() {
 unset HEADER
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
 	case $1 in
-	--format=*)
+	--output=*)
                 FORMAT=${1#--format=}
                 ;;
-        -f|--format)
+        -o|--output)
                 shift
                 FORMAT=$1
                 ;;

@@ -6,39 +6,65 @@ _Precooked BLAST-related recipes, scripts and utilities_
 ## Introduction
 
 In the [blast-galley](https://github.com/zwets/blast-galley), 
-[Io](http://io.zwets.it/) cooks up a mishmash of scripts and utilities
+[I](http://io.zwets.it/) collect a mishmash of scripts and utilities
 for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
 
-These tools were developed for my own use, but I've tried to document
-them well (all have `--help`) so they may be useful to anyone.
+These tools were developed for my own use, but I've tried to make
+them self-contained and well-documented (all have `--help`) so they can
+be of use to others.
 
 
-## What's cooking?
+## zblast
 
-### zblast / zblast-db
+`zblast` is a very thin wrapper around the blast command.  I use it because I keep
+forgetting the options that do what I want, while `blastn -help` is an oxymoron.
+For that same reason I maintain a [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
 
-Thin wrappers around blast because I keep forgetting the options that do what
-I want, and `blastn -help` is an oxymoron.  For that same reason I maintain
-this [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
+```bash
+$ zblast "ATGAGCAT"         # default blast query against `nt` for given sequence
+$ zblast queries.fasta      # same but reading subject(s) from file queries.fasta
+$ echo "ATGAGCAT" | zblast  # same but reading subject from stdin           
+$ zblast -b "-perc_identity 99 -evalue 0.01"  ...  # pass options to blast
+```
+
+## zblast-db
+
+`zblast-db` is my convenience wrapper to retrieve entries from a BLAST database
+in various output formats.
+
+Entries can be selected (`--entry`) on their accession number, the 'primary key' of
+sequences since NCBI abolished 'gi' in Aug 2016, or on any other part of the sequence
+identifier.  [Here](http://io.zwets.it/blast-cmdline-ref#database-management) are
+the details.
+
+The output can be the bare sequence (`-o s`), fasta (`-o f`), or a 
+table of selectable fields.
+
+```bash
+Usage: zblast-db [options] [blast-options]
+
+  Queries on BLAST databases.  Default is to retrieve all entries.
+
+  Options
+   -d|--db DB        database (default: nt)
+   -e|--entry ENTRY  entry to select (default: all)
+   -o|--output FMT   output format (default: oagTlt)
+   -s|--sep CHAR     separator character (default: tab)
+   -t|--header       prepend header (default: no)
+   -v|--verbose      verbose output
+   -h|--help         this help
+
+  Format specifiers for use with -f
+  Note, you can omit the percent sign and separators
+   f fasta | s sequence | l length | t title
+   o OID   | g GI       | a Accession | P PIG
+   T TaxID | L TaxName  | S SciName | m Masks (all)
+```
 
 
-### in-silico-pcr
+## taxo
 
-`in-silico-pcr.sh` is a bash script which tests pairs of PCR primers against a
-local BLAST database and returns the fragments selected by the primers.
-
-The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
-and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
-and probably do it better and faster.  However they report only positives, which
-made me curious if it is possible to estimate the false negative rate for a primer
-using only BLAST data.
-
-The script works and is self-contained; the usual `-h|--help` option gives documentation.
-
-
-### taxo
-
-`taxo` is a small command-line utility to search trough a local copy of the NCBI
+`taxo` is a command-line utility to search trough a local copy of the NCBI
 *taxdump* database.  Its main function is to translate between taxonomy IDs (**taxid**)
 and scientific names, either in batch or interactively.
 
@@ -48,7 +74,7 @@ ancestors, siblings, children and descendants.
 
 Taxo is not fast, but it does the job.  It is a `bash` script which uses `grep`,
 `sed` and `awk` against the plain `names.dmp` and `nodes.dmp` files from the
-[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  A much optimised
+[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  @@TODO@@ A much optimised
 version would first load the dmp-files in a lightweight in-memory database, then
 perform the queries against that.
 
@@ -58,9 +84,9 @@ at [NCBI Taxonomy](http://www.ncbi.nlm.nih.gov/guide/taxonomy/): [this](http://i
 may explain.  In my corner of the world, we have the Intermittentnet :-) 
 
 
-##### Examples: taxo in non-interactive mode
+#### Taxo non-interactive
 
-Searching on name or regular expression:
+Searching on taxonomic name or regular expression:
 
 ```bash
 $ taxo Zika
@@ -102,7 +128,7 @@ $ taxo -a 1280
    1280 species      Staphylococcus aureus
 ```
 
-##### Example: taxo in interactive mode
+#### Taxo interactive
 
 ```
 $ ./taxo -i 644
@@ -150,13 +176,23 @@ Command? c
    ...    ...
 ```
 
+## in-silico-pcr
+
+`in-silico-pcr.sh` is a bash script which tests pairs of PCR primers against a
+local BLAST database and returns the fragments selected by the primers.
+
+The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
+and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
+and probably do it better and faster.
+
+The script is self-contained; the usual `-h|--help` gives documentation.
+
+
 ## Miscellaneous
 
 ### Why the name "blast-galley"?
 
-The galley is the kitchen on a ship.  Kitchens are for turning raw ingredients
-into digestible food.  The juxtaposition of "blast" and "galley" has a nice
-piratey ring to it.  Pirates must be [revered](http://sparrowism.soc.srcf.net/home/pirates.html)
+Because it has a nice piratey ring to it.  Pirates must be [revered](http://sparrowism.soc.srcf.net/home/pirates.html)
 for the [well-established fact](http://www.forbes.com/sites/erikaandersen/2012/03/23/true-fact-the-lack-of-pirates-is-causing-global-warming)
 that their presence [attenuates global warming](http://www.venganza.org/about/open-letter/).
 
