@@ -1,16 +1,20 @@
 #!/bin/sh
 #
-# zblast-db.sh
-# Marco van Zwetselaar <zwets@kcri.ac.tz>
-# 2016-01-14
-# 
-# Wrap blastdbcmd using zwets defaults.
+# zblastdb-retrieve.sh
 #
+#   Marco van Zwetselaar <zwets@kcri.ac.tz>
+#   2016-01-14
+# 
+# Retrieve entries and/or their metadata from a BLAST database.
+# This script wraps blastdbcmd using sensible defaults and an easier
+# way to specify output format.
+#
+# Part of https://github.com/zwets/blast-galley (see LICENSE).
 
 # Defaults
 DATABASE="nt"
-ENTRY="all"
-FORMAT="oagTlt"
+COLUMNS="f"
+QUERY=""
 SEP="\\t"
 
 # Function to write the arguments to stderr if VERBOSE is set
@@ -28,24 +32,34 @@ err_exit() {
 usage_exit() {
 	RETVAL=${1:-1}
 	echo
-	echo "Usage: $(basename "$0") [options] [blast-options]"
+	echo "Usage: $(basename "$0") [OPTIONS] QUERY"
 	echo
-	echo "  Queries on BLAST databases.  Default is to query all entries."
+	echo "  Retrieve sequences and/or their metadata from a BLAST database."
+	echo
+	echo "  This script wraps blastdbcmd with convenient default options and"
+	echo "  and easier way to specify the output format.  The default output"
+	echo "  are sequences in FASTA format.  Use the --output option to obtain"
+	echo "  selected columns of meta-data in tabular format."
 	echo
 	echo "  Options"
 	echo "   -d|--db DB        database (default: $DATABASE)"
-	echo "   -e|--entry ENTRY  entry to select (default: $ENTRY)"
-	echo "   -o|--output FMT   output format (default: $FORMAT)"
+	echo "   -o|--output COLS  output columns (default: no columns, FASTA)"
 	echo "   -s|--sep CHAR     separator character (default: tab)"
 	echo "   -t|--header       prepend header (default: no)"
 	echo "   -v|--verbose      verbose output"
 	echo "   -h|--help         this help"
 	echo
-	echo "  Format specifiers for use with -f"
-	echo "  Note, you can omit the percent sign and separators"
-	echo "   f fasta | s sequence | l length | t title"
-	echo "   o OID   | g GI       | a Accession | P PIG"
-	echo "   T TaxID | L TaxName  | S SciName | m Masks (all)"
+	echo "  QUERY is a comma-separated search string of sequence identifiers."
+	echo "  Use 'all' to retrieve all entries from the database. The QUERY is"
+	echo "  passed verbatim to blastdbcmd -entry.  See the reference at"
+	echo "  http://io.zwets.it/blast-cmdline-ref/#about-sequence-identifiers"
+	echo "  for a description of valid sequence identifiers."
+	echo
+	echo "  COLS defines the columns to output when instead of the default FASTA,"
+	echo "  tabular output is requested.  COLS must be a string composed of:"
+	echo "   a Accession | s bare sequence | l length  | t title"
+	echo "   o OID       | g GI            | P PIG     | m Masks (all)"
+	echo "   T TaxID     | L TaxName       | S SciName"
 	echo 
 	exit ${1:-1}
 }
@@ -56,18 +70,11 @@ unset HEADER
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
 	case $1 in
 	--output=*)
-                FORMAT=${1#--format=}
+                COLUMNS=${1#--format=}
                 ;;
         -o|--output)
                 shift
-                FORMAT=$1
-                ;;
-	--entry=*)
-                ENTRY=${1#--entry=}
-                ;;
-        -e|--entry)
-                shift
-                ENTRY=$1
+                COLUMNS=$1
                 ;;
 	--db=*|--database=*)
                 DATABASE=${1#--database=}
@@ -91,21 +98,25 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
 	shift
 done
 
+[ $# -eq 1 ] || usage_exit 1
+QUERY="$1"
+
 # Check environment for NCBI Blast+
 
 [ -n "$NCBI" ] || [ -n "$BLASTDB" ] || err_exit "either BLASTDB or NCBI must be set (see http://io.zwets.it/blast-cmdline-ref)"
 
 # Output Format options
 
+# @TODO@ masking
 #%mX 	sequence masking data, where X is an optional comma-separated list of integers to specify the algorithm ID(s) to display (or all masks if absent or invalxd specification). Masking data will be displayed as a series of ‘N-M’ values separated by ‘;’ or the word ‘none’ if none are available.
 
-OUTFMT=$(echo "$FORMAT" | sed -e 's/\(.\)/%\1'$SEP'/g' -e 's/\(.\)$//')
+OUTFMT=$(echo "$COLUMNS" | sed -e 's/\(.\)/%\1'$SEP'/g' -e 's/\(.\)$//')
 
-[ -z "$HEADER" ] || echo "OUTFMT"
+[ "$COLUMNS" = "f" ] || [ -z "$HEADER" ] || echo "OUTFMT"
 
 # Invoke the command
 
-blastdbcmd -entry "$ENTRY" -db "$DATABASE" -outfmt "$OUTFMT"
+blastdbcmd -entry "$QUERY" -db "$DATABASE" -outfmt "$OUTFMT"
 
 exit 0
 
