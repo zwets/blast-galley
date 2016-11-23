@@ -27,9 +27,9 @@ $ echo "ATGAGCAT" | zblast  # same but reading subject from stdin
 $ zblast -b "-perc_identity 99 -evalue 0.01"  ...  # pass options to blast
 ```
 
-## zblast-db
+## zblast-retrieve
 
-`zblast-db` is my convenience wrapper to retrieve entries from a BLAST database
+`zblast-retrieve` is my convenience wrapper to retrieve entries from a BLAST database
 in various output formats.
 
 Entries can be selected (`--entry`) on their accession number, the 'primary key' of
@@ -37,28 +37,38 @@ sequences since NCBI abolished 'gi' in Aug 2016, or on any other part of the seq
 identifier.  [Here](http://io.zwets.it/blast-cmdline-ref#database-management) are
 the details.
 
-The output can be the bare sequence (`-o s`), fasta (`-o f`), or a 
-table of selectable fields.
+Output by default are zero or more FASTA formatted sequences.  Option `--output`
+selects tabular output of a number of selectable columns.
 
 ```bash
-Usage: zblast-db [options] [blast-options]
+Usage: zblast-retrieve [OPTIONS] QUERY
 
-  Queries on BLAST databases.  Default is to retrieve all entries.
+  Retrieve sequences and/or their metadata from a BLAST database.
+
+  This script wraps blastdbcmd with convenient default options and
+  and easier way to specify the output format.  The default output
+  are sequences in FASTA format.  Use the --output option to obtain
+  selected columns of meta-data in tabular format.
 
   Options
    -d|--db DB        database (default: nt)
-   -e|--entry ENTRY  entry to select (default: all)
-   -o|--output FMT   output format (default: oagTlt)
+   -o|--output COLS  output columns (default: no columns, FASTA)
    -s|--sep CHAR     separator character (default: tab)
    -t|--header       prepend header (default: no)
    -v|--verbose      verbose output
    -h|--help         this help
 
-  Format specifiers for use with -f
-  Note, you can omit the percent sign and separators
-   f fasta | s sequence | l length | t title
-   o OID   | g GI       | a Accession | P PIG
-   T TaxID | L TaxName  | S SciName | m Masks (all)
+  QUERY is a comma-separated search string of sequence identifiers.
+  Use 'all' to retrieve all entries from the database. The QUERY is
+  passed verbatim to blastdbcmd -entry.  See the reference at
+  http://io.zwets.it/blast-cmdline-ref/#about-sequence-identifiers
+  for a description of valid sequence identifiers.
+
+  COLS defines the columns to output when instead of the default FASTA,
+  tabular output is requested.  COLS must be a string composed of:
+   a Accession | s bare sequence | l length  | t title
+   o OID       | g GI            | P PIG     | m Masks (all)
+   T TaxID     | L TaxName       | S SciName
 ```
 
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# zblastdb-retrieve.sh
+# zblast-retrieve.sh
 #
 #   Marco van Zwetselaar <zwets@kcri.ac.tz>
 #   2016-01-14
