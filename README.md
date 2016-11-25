@@ -38,7 +38,7 @@ identifier.  [Here](http://io.zwets.it/blast-cmdline-ref#database-management) ar
 the details.
 
 Output by default are zero or more FASTA formatted sequences.  Option `--output`
-selects tabular output of a number of selectable columns.
+selects tabular output instead, and specificies the columns to output.
 
 ```bash
 Usage: zblast-retrieve [OPTIONS] QUERY
@@ -70,6 +70,12 @@ Usage: zblast-retrieve [OPTIONS] QUERY
    o OID       | g GI            | P PIG     | m Masks (all)
    T TaxID     | L TaxName       | S SciName
 ```
+
+
+## zblast-find
+
+`zblast-find` searches the entries in a BLAST database based on taxonomy ID,
+text in the sequence title, length, etc.  @@TODO: complete description@@.
 
 
 ## taxo

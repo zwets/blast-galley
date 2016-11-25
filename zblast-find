@@ -1,0 +1,191 @@
+#!/bin/sh
+#
+# zblast-find.sh
+#
+#   Marco van Zwetselaar <zwets@kcri.ac.tz>
+#   2016-01-14
+# 
+# Find sequences in a BLAST database based on metadata.
+# The meta
+#
+# Part of https://github.com/zwets/blast-galley (see LICENSE).
+
+# Defaults
+DATABASE="nt"
+
+# Function to write the arguments to stderr if VERBOSE is set
+emit() {
+	if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi
+}
+
+# Function to exit this script with an error message on stderr
+err_exit() {
+	echo "$(basename "$0"): $*" >&2
+	exit 1
+}
+
+# Create or update cache file "$1".  The resulting file has tab-separated fields: accession, identifier, taxid, length, title"
+make_cache_file() {
+	if [ -f "$M" ]; then
+		[ -w "$M" ] || err_exit "cache file out of date but not writable: $M; use -n or -u or run as sudo"
+		echo "$(basename "$0"): creating metadata cache file (this may take a while): $M" >&2
+	elif [ ! -w "$(dirname "$M")" ]; then
+		err_exit "no permission to create cache file $M; use -u or run as sudo"
+		echo "$(basename "$0"): updating metadata cache file (this may take a while): $M" >&2
+	fi
+	blastdbcmd -db "$DATABASE" -entry all -outfmt '%a	%i	%T	%l	%t' | 
+		gzip -9 -c > "$M" || err_exit "failed to create cache file: $M"
+}
+
+# Function to show usage information and exit
+usage_exit() {
+	RETVAL=${1:-1}
+	echo
+	echo "Usage: $(basename "$0") [OPTIONS] [QUERY] [REGEX]"
+	echo
+	echo "  Find sequences in a BLAST database on various metadata fields."
+	echo
+	echo "  OPTIONS"
+	echo "   -d|--db DB      database (default: $DATABASE)"
+	echo "   -n|--no-update  do not update the metadata cache"
+	echo "   -u|--use-tmp    use or create metadata cache in /tmp"
+	echo "   -v|--verbose    verbose output"
+	echo "   -h|--help       this help"
+	echo
+	echo "  QUERY"
+	echo "   -a|--accession ACCID  search on NCBI accession identifier"
+	echo "   -s|--seqid     SEQID  search on NCBI sequence identifier"
+	echo "   -t|--taxid     TAXID  search on NCBI taxonomy identifier"
+	echo "        See http://github.com/zwets/blast-galley/taxo for browser 'taxo'"
+	echo "   -l|--len	LEN    limit results to sequences of at least length LEN"
+	echo "   -m|--max-len	LEN    limit results to sequences of at most length LEN"
+	echo
+	echo "  QUERY and OPTION arguments may be mixed.  When no QUERY options are present,"
+	echo "  lists all entries in the database.  Multiple QUERY options are AND-ed together."
+	echo "  Options -a, -i, and -t may be repeated to specify an OR-ed set of choices."
+	echo
+	echo "  REGEX are all arguments remaining after the options have been parsed.  It is"
+	echo "  an optional extended regular expression matched against all sequence titles."
+	echo 
+	echo "  Output is a tab-separated list with fields: SEQID ACCID TAXID LENGTH TITLE."
+	echo 
+	echo "  Note that this program, when invoked for the first time on a database, will"
+	echo "  create a metadata cache for that database.  This may take a while.  Subsequent"
+	echo "  queries will be fast.  The script will update the cache when it detects that"
+	echo "  the database is newer than the cache."
+	echo
+	echo "  If the BLAST database is not writable, use option -u|--use-tmp to write the"
+	echo "  cache file to /tmp, or use -n|--no-update to use the (potentially stale)"
+	echo "  existing cache."
+	echo
+	exit ${1:-1}
+}
+
+# Field positions in the metadata cache file
+SPOS='$1'; APOS='$2'; TPOS='$3'; LPOS='$4'; RPOS='$NF'
+
+# Parse options
+
+unset ACCID SEQID TAXID REGEX MINLEN MAXLEN NO_UPDATE USE_TMP
+while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
+	case $1 in
+	--accession=*)
+                ACCID="${ACCID:+"$ACCID || "}($APOS == \"${1#--accession=}\")"
+                ;;
+        -a|--acc*)
+                shift
+                ACCID="${ACCID:+"$ACCID || "}($APOS == \"$1\")"
+                ;;
+	--seqid=*)
+                SEQID="${SEQID:+"$SEQID || "}($SPOS == \"${1#--seqid=}\")"
+                ;;
+        -s|--seqid)
+                shift
+                SEQID="${SEQID:+"$SEQID || "}($SPOS == \"$1\")"
+                ;;
+	--taxid=*)
+                TAXID="${TAXID:+"$TAXID || "}($TPOS == \"${1#--taxid=}\")"
+                ;;
+        -t|--taxid)
+                shift
+                TAXID="${TAXID:+"$TAXID || "}($TPOS == \"$1\")"
+                ;;
+	--len=*)
+                MINLEN=${1#--len=}
+                ;;
+        -l|--len|--min-len)
+                shift
+                MINLEN=$1
+                ;;
+	--max-len=*)
+                MAXLEN=${1#--max-len=}
+                ;;
+        -m|--max|--max-len)
+                shift
+                MAXLEN=$1
+                ;;
+	--db=*)
+                DATABASE=${1#--db=}
+                ;;
+        -d|--db|--database)
+                shift
+                DATABASE=$1
+                ;;
+	-n|--no-update)
+		NO_UPDATE=1
+		;;
+	-u|--use-tmp)
+		USE_TMP=1
+		;;
+	-h|--help)
+		usage_exit 0
+		;;
+	-v|--verbose)
+		VERBOSE=1
+		;;
+	*) usage_exit
+		;;
+	esac
+	shift
+done
+
+# Argument REGEX captures rest of the command-line
+[ $# -eq 0 ] || REGEX="$*"
+
+# Determine P as path to directory of (last volume of) DATABASE 
+P="$(blastdbcmd -info -db "$DATABASE" 2>/dev/null | tail -1 | sed -e 's/^[ \t]*//')"
+[ -n "$P" ] || err_exit "no such database: $DATABASE"
+P="$(dirname "$P")"
+emit "database directory: $P"
+
+# Establish M as metadata filename either in database directory or in /tmp
+F="$(basename "$DATABASE").metadata.gz"
+M="$P/$F"
+[ -z "$USE_TMP" ] || M="/tmp/$F"
+emit "metadata cache file: $M"
+
+# Check that M is up to date if it exists
+if [ -f "$M" ] && [ -z "$NO_UPDATE" ]; then
+	emit "checking staleness of metadata cache file: $M"
+	for D in $P/$(basename "$DATABASE")*; do
+		[ -f "$D" ] || continue
+		[ "$D" -nt "$M" ] && { make_cache_file "$M" ; break; }
+	done
+fi
+
+# Check that M exists
+[ -f "$M" ] || make_cache_file "$M"
+
+# Build up the AWK query
+AWK_QUERY="1"
+[ -z "$ACCID" ]  || AWK_QUERY="$AWK_QUERY && ($ACCID)"
+[ -z "$SEQID" ]  || AWK_QUERY="$AWK_QUERY && ($SEQID)"
+[ -z "$TAXID" ]  || AWK_QUERY="$AWK_QUERY && ($TAXID)"
+[ -z "$MINLEN" ] || AWK_QUERY="$AWK_QUERY && ($LPOS >= $MINLEN)"
+[ -z "$MAXLEN" ] || AWK_QUERY="$AWK_QUERY && ($LPOS <= $MAXLEN)"
+[ -z "$REGEX" ]  || AWK_QUERY="$AWK_QUERY && match($RPOS,R)"
+
+# And go
+emit "awk query: $AWK_QUERY"
+zcat "$M" | awk -F '\t' -v R="$REGEX" "$AWK_QUERY"
+
