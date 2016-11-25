@@ -1,12 +1,21 @@
 #!/bin/sh
 #
-# zblast-find.sh
+#  zblast-find - search a BLAST database by taxonomy id or title
+#  Copyright (C) 2016  Marco van Zwetselaar <io@zwets.it>
 #
-#   Marco van Zwetselaar <zwets@kcri.ac.tz>
-#   2016-01-14
-# 
-# Find sequences in a BLAST database based on metadata.
-# The meta
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 #
 # Part of https://github.com/zwets/blast-galley (see LICENSE).
 
@@ -43,7 +52,12 @@ usage_exit() {
 	echo
 	echo "Usage: $(basename "$0") [OPTIONS] [QUERY] [REGEX]"
 	echo
-	echo "  Find sequences in a BLAST database on various metadata fields."
+	echo "  Search for sequences in BLAST database by taxonomy ID or title."
+	echo
+	echo "  The blastdbcmd utility can only query on sequence identifiers.  This"
+	echo "  script can additionally search for sequences on taxonomy ID, by regular"
+	echo "  expression search through sequence titles, and optionally filtering for"
+	echo "  minimum a/o maximum length."
 	echo
 	echo "  OPTIONS"
 	echo "   -d|--db DB      database (default: $DATABASE)"
@@ -56,12 +70,21 @@ usage_exit() {
 	echo "   -a|--accession ACCID  search on NCBI accession identifier"
 	echo "   -s|--seqid     SEQID  search on NCBI sequence identifier"
 	echo "   -t|--taxid     TAXID  search on NCBI taxonomy identifier"
-	echo "        See http://github.com/zwets/blast-galley/taxo for browser 'taxo'"
+	echo "        See http://github.com/zwets/blast-galley/taxo for a CLI browser"
 	echo "   -l|--len	LEN    limit results to sequences of at least length LEN"
 	echo "   -m|--max-len	LEN    limit results to sequences of at most length LEN"
 	echo
-	echo "  QUERY and OPTION arguments may be mixed.  When no QUERY options are present,"
-	echo "  lists all entries in the database.  Multiple QUERY options are AND-ed together."
+	echo "  REGEX"
+	echo "   An extended regular expression matched against the sequence titles."
+	echo
+	echo "  Note that this program, when invoked for the first time on a database, will"
+	echo "  create a metadata cache for that database.  This may take a long while for"
+	echo "  large databases (the size of nt).  Subsequent"
+	echo "  queries will be fast.  If a cache file exists, the script will validate that"
+The script will update the cache when it detects that"
+	echo "  the database is newer than the cache."
+	echo
+	echo "  QUERY and OPTION arguments may occur in any order.  The 'ID-query options' (-a, -i, -t) may"
 	echo "  Options -a, -i, and -t may be repeated to specify an OR-ed set of choices."
 	echo
 	echo "  REGEX are all arguments remaining after the options have been parsed.  It is"
@@ -69,11 +92,6 @@ usage_exit() {
 	echo 
 	echo "  Output is a tab-separated list with fields: SEQID ACCID TAXID LENGTH TITLE."
 	echo 
-	echo "  Note that this program, when invoked for the first time on a database, will"
-	echo "  create a metadata cache for that database.  This may take a while.  Subsequent"
-	echo "  queries will be fast.  The script will update the cache when it detects that"
-	echo "  the database is newer than the cache."
-	echo
 	echo "  If the BLAST database is not writable, use option -u|--use-tmp to write the"
 	echo "  cache file to /tmp, or use -n|--no-update to use the (potentially stale)"
 	echo "  existing cache."
