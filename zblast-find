@@ -28,12 +28,12 @@ err_exit() {
 make_cache_file() {
 	if [ -f "$M" ]; then
 		[ -w "$M" ] || err_exit "cache file out of date but not writable: $M; use -n or -u or run as sudo"
-		echo "$(basename "$0"): creating metadata cache file (this may take a while): $M" >&2
+		echo "$(basename "$0"): updating metadata cache file (this may take a while): $M" >&2
 	elif [ ! -w "$(dirname "$M")" ]; then
 		err_exit "no permission to create cache file $M; use -u or run as sudo"
-		echo "$(basename "$0"): updating metadata cache file (this may take a while): $M" >&2
+		echo "$(basename "$0"): creating metadata cache file (this may take a while): $M" >&2
 	fi
-	blastdbcmd -db "$DATABASE" -entry all -outfmt '%a	%i	%T	%l	%t' | 
+	blastdbcmd -db "$DATABASE" -entry all -outfmt '%i	%a	%T	%l	%t' | 
 		gzip -9 -c > "$M" || err_exit "failed to create cache file: $M"
 }
 
@@ -161,7 +161,7 @@ emit "database directory: $P"
 # Establish M as metadata filename either in database directory or in /tmp
 F="$(basename "$DATABASE").metadata.gz"
 M="$P/$F"
-[ -z "$USE_TMP" ] || M="/tmp/$F"
+[ -n "$USE_TMP" ] || [ ! -f "$M" -a -f "/tmp/$F" ] && M="/tmp/$F"
 emit "metadata cache file: $M"
 
 # Check that M is up to date if it exists
