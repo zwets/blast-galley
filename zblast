@@ -69,8 +69,8 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
 		shift
                 TASK=$1
                 ;;
-	--db=*|--database=*)
-                DATABASE=${1#--database=}
+	--db=*)
+                DATABASE=${1#--db=}
                 ;;
         -d|--db|--database)
                 shift
