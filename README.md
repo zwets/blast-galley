@@ -7,18 +7,19 @@ _Precooked BLAST-related recipes, scripts and utilities_
 
 In the [blast-galley](https://github.com/zwets/blast-galley), 
 [I](http://io.zwets.it/) collect a mishmash of scripts and utilities
-for easy digestion of the [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
+for easy digestion of the
+[NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
 
-These tools were developed for my own use, but I've tried to make
-them self-contained and well-documented (all have `--help`) so they can
-be of use to others.
+These tools were developed for my own use, but I've tried to make them
+self-contained (all have `--help`) so they may be of use to others.
 
 
 ## zblast
 
-`zblast` is a very thin wrapper around the blast command.  I use it because I keep
-forgetting the options that do what I want, while `blastn -help` is an oxymoron.
-For that same reason I maintain a [Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
+`zblast` is a very thin wrapper around the blast command.  I use it because
+I keep forgetting the options that do what I want, while `blastn -help` is
+an oxymoron.  For that same reason I maintain a
+[Blast+ commmand-line reference](http://io.zwets.it/blast-cmdline-ref)
 
 ```bash
 $ zblast "ATGAGCAT"         # default blast query against `nt` for given sequence
@@ -27,55 +28,44 @@ $ echo "ATGAGCAT" | zblast  # same but reading subject from stdin
 $ zblast -b "-perc_identity 99 -evalue 0.01"  ...  # pass options to blast
 ```
 
-## zblast-retrieve
 
-`zblast-retrieve` is my convenience wrapper to retrieve entries from a BLAST database
-in various output formats.
+## blastdb-get
 
-Entries can be selected (`--entry`) on their accession number, the 'primary key' of
-sequences since NCBI abolished 'gi' in Aug 2016, or on any other part of the sequence
-identifier.  [Here](http://io.zwets.it/blast-cmdline-ref#database-management) are
-the details.
-
-Output by default are zero or more FASTA formatted sequences.  Option `--output`
-selects tabular output instead, and specificies the columns to output.
+`blastdb-get` retrieves sequences or metadata from a BLAST database, using 
+sequence identifiers such as accession to identify the entry.
 
 ```bash
-Usage: zblast-retrieve [OPTIONS] QUERY
+$ blastdb-get 'X74108.1'
+>gi|395160|emb|X74108.1| V.cholerae gene for heat-stable enterotoxin, partial
+TTATTATTTTCTTCAATCGCATTTAGCCAAACAGTAGAAAACAATACAAAAACAGTGCAGCAACCACAACAAATTGAAAG
+CAAGGTAAATATTAAAAAACTAAGTGAAAATGAAGAATGCCCATTTATAAAACAAGTCGATGAAAATGGAAATCTCATTG
+```
 
-  Retrieve sequences and/or their metadata from a BLAST database.
+It can return either FASTA sequences, or tabular data about the sequences.
 
-  This script wraps blastdbcmd with convenient default options and
-  and easier way to specify the output format.  The default output
-  are sequences in FASTA format.  Use the --output option to obtain
-  selected columns of meta-data in tabular format.
-
-  Options
-   -d|--db DB        database (default: nt)
-   -o|--output COLS  output columns (default: no columns, FASTA)
-   -s|--sep CHAR     separator character (default: tab)
-   -t|--header       prepend header (default: no)
-   -v|--verbose      verbose output
-   -h|--help         this help
-
-  QUERY is a comma-separated search string of sequence identifiers.
-  Use 'all' to retrieve all entries from the database. The QUERY is
-  passed verbatim to blastdbcmd -entry.  See the reference at
-  http://io.zwets.it/blast-cmdline-ref/#about-sequence-identifiers
-  for a description of valid sequence identifiers.
-
-  COLS defines the columns to output when instead of the default FASTA,
-  tabular output is requested.  COLS must be a string composed of:
-   a Accession | s bare sequence | l length  | t title
-   o OID       | g GI            | P PIG     | m Masks (all)
-   T TaxID     | L TaxName       | S SciName
+```bash
+$ blastdb-get --table "aTs" EU545988.1 JF260983.1
+EU545988.1      Zika virus      10272   ATGAAAAACCCCAAAGAAGAAATCCGGAGGATCC...
+JF260983.1      Dengue virus    10176   ATGAATAACCAACGGAAAAAGGCGAGAAACACGC...
 ```
 
 
-## zblast-find
+## blastdb-find
 
-`zblast-find` searches the entries in a BLAST database based on taxonomy ID,
-text in the sequence title, length, etc.  @@TODO: complete description@@.
+Whereas `blastdb-get` retrieves sequences by identifier only, `blastdb-find`
+can also grep through sequence titles or select by taxonomy ID.  By default
+it returns a list, but it can also produce the sequences in FASTA format.
+
+```bash
+$ blastdb-find -t 64320 -t 12637 'polyprotein .*complete cds'
+gb|EU545988.1|  EU545988.1      64320   10272   Zika virus polyprotein gene, complete cds
+gb|DQ859059.1|  DQ859059.1      64320   10254   Zika virus strain MR 766 polyprotein gene, complete cds
+gb|JF260983.1|  JF260983.1      12637   10176   Dengue virus strain EEB-17 polyprotein gene, complete cds
+```
+
+`blastdb-find` can do a superset of what `blastdb-get` can do, but it needs
+to maintain a cache of metadata per BLAST database.  For 'key-based' queries,
+`blastdb-get` is generally faster, simpler, and more configurable.
 
 
 ## taxo
