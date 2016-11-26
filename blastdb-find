@@ -204,9 +204,9 @@ AWK_QUERY="1"
 # And go
 emit "awk query: $AWK_QUERY"
 if [ -z "$FASTA" ]; then
-    zcat "$M" | awk -F '\t' -v R="$REGEX" "$AWK_QUERY"
+    zcat "$M" | awk -b -O -F '\t' -v R="$REGEX" "$AWK_QUERY"
 else
-    zcat "$M" | awk -F '\t' -v R="$REGEX" "$AWK_QUERY {print \$1}" | while read V; do ENTRIES="${ENTRIES:+$ENTRIES,}$V"; done
+    zcat "$M" | awk -b -O -F '\t' -v R="$REGEX" "$AWK_QUERY {print \$1}" | while read V; do ENTRIES="${ENTRIES:+$ENTRIES,}$V"; done
     blastdbcmd -db "$DATABASE" -entry "$ENTRIES"
 fi
 
