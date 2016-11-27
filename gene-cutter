@@ -64,7 +64,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE TARGET ...
 
 # Parse options
 
-EXTRA=0
+STATS=0
 unset INFO VERBOSE
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
@@ -133,11 +133,11 @@ while [ $# -ne 0 ]; do
         -evalue "$E_VALUE" -perc_identity "$PERC_ID" -qcov_hsp_perc "$QCOV_PC" \
         -outfmt "$BLAST_OUTFMT"
 done |
-awk -b -O -F '\t' -v INFO="${INFO:-Segment}" -v EXTRA=$EXTRA '{
+awk -b -O -F '\t' -v INFO="${INFO:-Segment}" -v STATS=$STATS '{
     printf ">lcl|cut%04d %s from %s matching %s", NR, INFO, $5, $1 
-    if (EXTRA) printf " (length %d/%d (%.1f%/%.1f); e=%.3f, p=%.1f%, b=%s; )", $8, $4, $12, $13, $9, $10, $11 
+    if (STATS) printf " (length %d/%d (%.1f%); e=%.3f, p=%.1f%, b=%s; i=%d, g=%d, gs=%d)", $8, $4, $13, $9, $10, $11, $14, $15, $16 
     printf "\n"
-    # We need to strip the dashed gaps
+    # We need to strip the dashed deletions
     print gensub("-","","g",$NF)
 }'
 
