@@ -1,0 +1,144 @@
+#!/bin/sh
+#
+#  gene-cutter - excise sequence sections matching a template sequence
+#  Copyright (C) 2016  Marco van Zwetselaar <io@zwets.it>
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#  Part of https://github.com/zwets/blast-galley
+
+# Defaults
+
+PERC_ID=90.0
+E_VALUE=0.01
+QCOV_PC=60
+
+# Function to emit information to standard error if VERBOSE is set
+emit() {
+    [ -z "$VERBOSE" ] || echo "$(basename "$0"): $*" >&2
+}
+
+# Function to exit this script with an error message on stderr
+err_exit() {
+    echo "$(basename "$0"): $*" >&2
+    exit 1
+}
+
+# Function to show usage information and exit
+usage_exit() {
+    echo "
+Usage: $(basename $0) [OPTIONS] TEMPLATE TARGET ...
+
+  Excise from all TARGETs all sequences that match the TEMPLATE.
+
+  TEMPLATE is a FASTA format file containing a single sequence.  One or more
+  TARGETs are FASTA format files which will be searched for occurrences of
+  the template.  OPTIONS determine the requested accuracy of the match.
+
+  OPTIONS
+   -i|--info TEXT     insert TEXT in FASTA headers of generated sequences
+   -s|--stats         add match statistics to the FASTA headers
+   -p|--perc-ident N  percentage identity threshold (default: $PERC_ID)
+   -e|--e-value N     e-value threshold (default: $E_VALUE)
+   -c|--coverage N    query coverage percentage threshold (default: $QCOV_PC)
+   -v|--verbose       Emit progress messages to standard error
+
+  The script writes the matching sequences in FASTA format to standard output,
+  generating a FASTA header for each sequence.  To add some descriptive text
+  to each FASTA header, use -i|--info.  To add the statistics for each match,
+  use option -s|--stats.
+"
+    exit ${1:-1}
+}
+
+# Parse options
+
+EXTRA=0
+unset INFO VERBOSE
+while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
+    case $1 in
+    -s|--stats)
+        STATS=1
+        ;;
+    -i|--info)
+        shift
+        INFO=$1
+        ;;
+    --info=*)
+        INFO="${1#--info=}"
+        ;;
+    -p|--perc-id*)
+        shift
+        PERC_ID=$1
+        ;;
+    --perc-ident=*)
+        PERC_ID="${1#--perc-ident=}"
+        ;;
+    -e|--e-value)
+        shift
+        E_VALUE=$1
+        ;;
+    --e-value=*)
+        E_VALUE="${1#--e-value=}"
+        ;;
+    -c|--cov*)
+        shift
+        QCOV_PC=$1
+        ;;
+    --coverage=*)
+        QCOV_PC="${1#--coverage=}"
+        ;;
+    -v|--verbose)
+        VERBOSE=1
+        ;;
+    -h|--help)
+        usage_exit 0
+        ;;
+    *) usage_exit
+        ;;
+    esac
+    shift
+done
+
+# Check the arguments
+
+[ $# -ge 2 ] || usage_exit
+
+TEMPLATE_FILE="$1"
+shift
+[ -r "$TEMPLATE_FILE" ] || err_exit "cannot read file: $TEMPLATE_FILE"
+[ $(grep '^>' "$TEMPLATE_FILE" | wc -l) -eq 1 ] || err_exit "file must have one sequence: $TEMPLATE_FILE"
+
+# BLAST output format specifier
+
+#             $ 1    2      3    4    5    6      7    8      9      10     11       12    13      14     15      16   17       18     19    
+BLAST_OUTFMT="6 qacc qstart qend qlen sacc sstart send length evalue pident bitscore qcovs qcovhsp nident gapopen gaps mismatch stitle sseq"
+
+while [ $# -ne 0 ]; do
+    emit "processing: $1"
+    TARGET_FILE="$1"
+    shift
+    blastn -task blastn -parse_deflines -query "$TEMPLATE_FILE" -subject "$TARGET_FILE" \
+        -evalue "$E_VALUE" -perc_identity "$PERC_ID" -qcov_hsp_perc "$QCOV_PC" \
+        -outfmt "$BLAST_OUTFMT"
+done |
+awk -b -O -F '\t' -v INFO="${INFO:-Segment}" -v EXTRA=$EXTRA '{
+    printf ">lcl|cut%04d %s from %s matching %s", NR, INFO, $5, $1 
+    if (EXTRA) printf " (length %d/%d (%.1f%/%.1f); e=%.3f, p=%.1f%, b=%s; )", $8, $4, $12, $13, $9, $10, $11 
+    printf "\n"
+    # We need to strip the dashed gaps
+    print gensub("-","","g",$NF)
+}'
+
+# vim: sts=4:sw=4:ai:si:et:

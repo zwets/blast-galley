@@ -80,11 +80,13 @@ ancestors, siblings, children and descendants.
 
 Taxo is not fast, but it does the job.  It is a `bash` script which uses `grep`,
 `sed` and `awk` against the plain `names.dmp` and `nodes.dmp` files from the
-[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  @@TODO@@ A much optimised
-version would first load the dmp-files in a lightweight in-memory database, then
-perform the queries against that.
+[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  i
 
-In case you wonder why I don't just use the [Taxonomy browser](http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Root)
+@@TODO@@ A much optimised version first loads the dmp-files in a lightweight
+in-memory database (sqlite?), then performs the queries against that.
+
+In case you wonder why I don't just use the
+[Taxonomy browser](http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Root)
 or [Taxonomy Common Tree](http://www.ncbi.nlm.nih.gov/Taxonomy/CommonTree/wwwcmt.cgi)
 at [NCBI Taxonomy](http://www.ncbi.nlm.nih.gov/guide/taxonomy/): [this](http://io.zwets.it/about)
 may explain.  In my corner of the world, we have the Intermittentnet :-) 
@@ -136,6 +138,10 @@ $ taxo -a 1280
 
 #### Taxo interactive
 
+Interactive `taxo` has the same functionality, with the added convenience
+of being able to navigate a pointer up and down the tree, and examine
+ancestors, siblings or descendants in each context.
+
 ```
 $ ./taxo -i 644
 Loading names ... OK.
@@ -181,6 +187,26 @@ Command? c
    1282 species      Staphylococcus epidermidis
    ...    ...
 ```
+
+
+## gene-cutter
+
+`gene-cutter` solves the problem of excising from one or more sequences the
+segment(s) which match a given template, such as a known gene sequence.  It
+is assumed that the sequences are assembled genomes, ideally consisting of
+as few contigs as possible.
+
+@@TODO@@ extend the script so it can detect segments broken across contigs.
+This should be doable by lowering the query coverage threshold, and finding
+subjects whose start or end is overlapped by the query.
+
+Note: possibly better ways to 'excise' a gene are (a) mapping reads on the
+template, and (b) processing the reads/assembly using annotation pipeline.
+This script uses only the BLAST command-line utilities (plus the usual
+suspects on any GNU system: bash, sed, tr, awk, etc).  
+
+The script is self-contained, use `-h|--help` for documentation.
+
 
 ## in-silico-pcr
 
