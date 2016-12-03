@@ -16,8 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#
-# Part of https://github.com/zwets/blast-galley (see LICENSE).
+#  Part of http://io.zwets.it/blast-galley
 
 # Defaults
 DATABASE="nt"
@@ -43,7 +42,7 @@ err_exit() {
 make_cache_file() {
 
     if [ -f "$M" ]; then
-        [ -w "$M" ] || 
+        [ -w "$M" ] ||
             err_exit "cache file out of date but not writable: $M; use -n or -u or run as sudo"
         message "updating metadata cache file (this may take a while): $M"
     elif [ ! -w "$(dirname "$M")" ]; then
@@ -51,7 +50,7 @@ make_cache_file() {
         message "creating metadata cache file (this may take a while): $M"
     fi
 
-    blastdbcmd -db "$DATABASE" -entry all -outfmt '%i    %a    %T    %l    %t' | 
+    blastdbcmd -db "$DATABASE" -entry all -outfmt '%i    %a    %T    %l    %t' |
         gzip -9 -c > "$M" || err_exit "failed to create cache file: $M"
 }
 
@@ -78,7 +77,7 @@ Usage: $(basename "$0") [OPTIONS] [FILTERS] [REGEX]
    -d|--db DB      database (default: $DATABASE)
    -n|--no-update  do not update the metadata cache
    -u|--use-tmp    use or create metadata cache in /tmp
-   -f|--fasta      output the matching FASTA sequences rather than metadata 
+   -f|--fasta      output the matching FASTA sequences rather than metadata
    -v|--verbose    verbose output
    -h|--help       this help
 
@@ -168,7 +167,7 @@ done
 # Argument REGEX captures rest of the command-line
 [ $# -eq 0 ] || REGEX="$*"
 
-# Determine P as path to directory of (last volume of) DATABASE 
+# Determine P as path to directory of (last volume of) DATABASE
 P="$(blastdbcmd -info -db "$DATABASE" 2>/dev/null | tail -1 | sed -e 's/^[ \t]*//')"
 [ -n "$P" ] || err_exit "no such database: $DATABASE"
 P="$(dirname "$P")"

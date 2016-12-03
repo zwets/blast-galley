@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#  Part of https://github.com/zwets/blast-galley
+#  Part of http://io.zwets.it/blast-galley
 
 # Defaults
 
@@ -51,7 +51,7 @@ usage_exit() {
 Usage: $(basename $0) [OPTIONS] FILE
 
   Perform an in silico PCR for the primer pair in FILE.
-  
+
   FILE must be FASTA format with one line for the forward primer in 5' to 3'
   direction, and one line for the reverse primer in 5' to 3' direction.  Both
   lines must be preceded by a comment line starting with '>'.

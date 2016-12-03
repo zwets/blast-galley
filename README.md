@@ -5,7 +5,7 @@ _Precooked BLAST-related recipes, scripts and utilities_
 
 ## Introduction
 
-In the [blast-galley](https://github.com/zwets/blast-galley), 
+In the [blast-galley](https://github.com/zwets/blast-galley),
 [I](http://io.zwets.it/) collect a mishmash of scripts and utilities
 for easy digestion of the
 [NCBI Blast+ suite](http://www.ncbi.nlm.nih.gov/books/NBK1763/).
@@ -24,14 +24,14 @@ an oxymoron.  For that same reason I maintain a
 ```bash
 $ zblast "ATGAGCAT"         # default blast query against `nt` for given sequence
 $ zblast queries.fasta      # same but reading subject(s) from file queries.fasta
-$ echo "ATGAGCAT" | zblast  # same but reading subject from stdin           
+$ echo "ATGAGCAT" | zblast  # same but reading subject from stdin
 $ zblast -b "-perc_identity 99 -evalue 0.01"  ...  # pass options to blast
 ```
 
 
 ## blastdb-get
 
-`blastdb-get` retrieves sequences or metadata from a BLAST database, using 
+`blastdb-get` retrieves sequences or metadata from a BLAST database, using
 sequence identifiers such as accession to identify the entry.
 
 ```bash
@@ -89,7 +89,7 @@ In case you wonder why I don't just use the
 [Taxonomy browser](http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Root)
 or [Taxonomy Common Tree](http://www.ncbi.nlm.nih.gov/Taxonomy/CommonTree/wwwcmt.cgi)
 at [NCBI Taxonomy](http://www.ncbi.nlm.nih.gov/guide/taxonomy/): [this](http://io.zwets.it/about)
-may explain.  In my corner of the world, we have the Intermittentnet :-) 
+may explain.  In my corner of the world, we have the Intermittentnet :-)
 
 
 #### Taxo non-interactive
@@ -117,7 +117,7 @@ $ taxo '.*monas$'
 Looking up on taxid:
 
 ```bash
-$ taxo 286 666 
+$ taxo 286 666
     286 genus        Pseudomonas
     666 species      Vibrio cholerae
 ```
@@ -203,7 +203,7 @@ subjects whose start or end is overlapped by the query.
 Note: possibly better ways to 'excise' a gene are (a) mapping reads on the
 template, and (b) processing the reads/assembly using annotation pipeline.
 This script uses only the BLAST command-line utilities (plus the usual
-suspects on any GNU system: bash, sed, tr, awk, etc).  
+suspects on any GNU system: bash, sed, tr, awk, etc).
 
 The script is self-contained, use `-h|--help` for documentation.
 
@@ -214,7 +214,7 @@ The script is self-contained, use `-h|--help` for documentation.
 local BLAST database and returns the fragments selected by the primers.
 
 The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
-and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing 
+and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing
 and probably do it better and faster.
 
 The script is self-contained; the usual `-h|--help` gives documentation.
