@@ -127,7 +127,7 @@ fi
 # TODO: check if query less than 50 bases, then use task blastn-short
 #       but check first that blastn doesn't do this already
 
-blastn -num_threads 6 -task "$TASK" -db "$DATABASE" $BLAST_OPTS -query "$TMPFILE" 
+blastn -num_threads $(nproc) -task "$TASK" -db "$DATABASE" $BLAST_OPTS -query "$TMPFILE" 
 
 RETVAL=$?
 

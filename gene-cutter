@@ -24,8 +24,6 @@ PERC_ID=90.0
 E_VALUE=0.01
 QCOV_PC=60
 STATS=1
-# Hope this works cross-platform
-NUM_THREADS=$(fgrep 'core id' /proc/cpuinfo | wc -l)
 
 # Function to emit information to standard error if VERBOSE is set
 emit() {
@@ -44,7 +42,7 @@ BLAST_OUTFMT="6 qacc qstart qend qlen sacc sstart send length evalue pident bits
 
 # Function to perform the BLAST query; args $* are added to its end
 blast_query() {
-    blastn -task blastn ${DATABASE:+-num_threads "$NUM_THREADS"} -parse_deflines \
+    blastn -task blastn ${DATABASE:+-num_threads $(nproc)} -parse_deflines \
         -evalue "$E_VALUE" -perc_identity "$PERC_ID" -qcov_hsp_perc "$QCOV_PC" \
         -query "$TEMPLATE_FILE" -outfmt "$BLAST_OUTFMT" $*
 }
