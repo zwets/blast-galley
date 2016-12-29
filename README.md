@@ -109,7 +109,7 @@ NCBI taxonomy database.  `taxo` has moved to <https://github.com/zwets/taxo>.
 
 ### Why the name "blast-galley"?
 
-Because it has a nice piratey ring to it.  Pirates must be [revered](http://sparrowism.soc.srcf.net/home/pirates.html)
+Because it has a nice piratey ring.  Pirates must be [revered](http://sparrowism.soc.srcf.net/home/pirates.html)
 for the [well-established fact](http://www.forbes.com/sites/erikaandersen/2012/03/23/true-fact-the-lack-of-pirates-is-causing-global-warming)
 that their presence [attenuates global warming](http://www.venganza.org/about/open-letter/).
 
