@@ -68,127 +68,6 @@ to maintain a cache of metadata per BLAST database.  For 'key-based' queries,
 `blastdb-get` is generally faster, simpler, and more configurable.
 
 
-## taxo
-
-`taxo` is a command-line utility to search trough a local copy of the NCBI
-*taxdump* database.  Its main function is to translate between taxonomy IDs (**taxid**)
-and scientific names, either in batch or interactively.
-
-In interactive mode, `taxo` is a command-line browser for the taxonomy hierarchy.
-Using simple commands it allows you to navigate between nodes and examine their
-ancestors, siblings, children and descendants.
-
-Taxo is not fast, but it does the job.  It is a `bash` script which uses `grep`,
-`sed` and `awk` against the plain `names.dmp` and `nodes.dmp` files from the
-[NCBI taxdump archive](ftp://ftp.ncbi.nih.gov/pub/taxonomy).  i
-
-@@TODO@@ A much optimised version first loads the dmp-files in a lightweight
-in-memory database (sqlite?), then performs the queries against that.
-
-In case you wonder why I don't just use the
-[Taxonomy browser](http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Root)
-or [Taxonomy Common Tree](http://www.ncbi.nlm.nih.gov/Taxonomy/CommonTree/wwwcmt.cgi)
-at [NCBI Taxonomy](http://www.ncbi.nlm.nih.gov/guide/taxonomy/): [this](http://io.zwets.it/about)
-may explain.  In my corner of the world, we have the Intermittentnet :-)
-
-
-#### Taxo non-interactive
-
-Searching on taxonomic name or regular expression:
-
-```bash
-$ taxo Zika
-64320   Zika virus
-395648  Zikanapis
-395833  Zikanapis clypeata
-```
-
-```bash
-$ taxo '.*monas$'
-85      Hyphomonas
-226     Alteromonas
-283     Comamonas
-...	...
-1677989 Palustrimonas
-1701761 Thiobacimonas
-1709445 Candidatus Heliomonas
-```
-
-Looking up on taxid:
-
-```bash
-$ taxo 286 666
-    286 genus        Pseudomonas
-    666 species      Vibrio cholerae
-```
-
-Querying hierarchy for a species:
-
-```bash
-$ taxo -a 1280
- 131567              cellular organisms
-      2 superkingdom Bacteria
-   1239 phylum       Firmicutes
-  91061 class        Bacilli
-   1385 order        Bacillales
-  90964 family       Staphylococcaceae
-   1279 genus        Staphylococcus
-   1280 species      Staphylococcus aureus
-```
-
-#### Taxo interactive
-
-Interactive `taxo` has the same functionality, with the added convenience
-of being able to navigate a pointer up and down the tree, and examine
-ancestors, siblings or descendants in each context.
-
-```
-$ ./taxo -i 644
-Loading names ... OK.
-Loading nodes ... OK.
-    644 species      Aeromonas hydrophila
-
-Command? help
-
-Commands:
--                ENTER key displays current node ID, rank and name
-- NUMBER         jump to node with taxid NUMBER
-- /REGEX         search for nodes whose name matches left-anchored REGEX
-- u(p)           move current node pointer to parent node
-- p(arent)       show parent but do not move current node pointer there
-- a(ncestors)    show lineage of current node all the way up to root
-- s(iblings)     show all siblings of the current node
-- c(hildren)     show all children of the current node
-- D(escendants)  show all descendants of the current node
-- q(uit) or ^D   leave
-
-Command? u
-    642 genus        Aeromonas
-
-Command? u
-  84642 family       Aeromonadaceae
-
-Command? 1279
-   1279 genus        Staphylococcus
-
-Command? s
-  45669 genus        Salinicoccus
- 370802              environmental samples
- 227979 genus        Jeotgalicoccus
-1647178 genus        Aliicoccus
- 489909 genus        Nosocomiicoccus
-  69965 genus        Macrococcus
- 111016              unclassified Staphylococcaceae
-   1279 genus        Staphylococcus
-
-Command? c
-   1280 species      Staphylococcus aureus
-   1281 species      Staphylococcus carnosus
-   1282 species      Staphylococcus epidermidis
-   ...    ...
-```
-
-
 ## gene-cutter
 
 `gene-cutter` solves the problem of excising from one or more sequences the
@@ -218,6 +97,12 @@ and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing
 and probably do it better and faster.
 
 The script is self-contained; the usual `-h|--help` gives documentation.
+
+
+## taxo
+
+`taxo` is a command line utility to search or browse a local copy of the
+NCBI taxonomy database.  `taxo` has moved to <https://github.com/zwets/taxo>.
 
 
 ## Miscellaneous
