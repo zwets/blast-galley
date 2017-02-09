@@ -63,28 +63,25 @@ usage_exit() {
     echo "
 Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
 
-  Excise from all TARGETs all sequences that match the TEMPLATE.
+  Excise from each TARGET all sections that match TEMPLATE.
+  
+  TEMPLATE is a FASTA file.  TARGETs are either FASTA files or sequence
+  identifiers in BLAST database DB (when option --database DB is given).
+  When no TARGET is specified, either read FASTA from standard input, or
+  (with option --database) search all sequences in the database.
 
   OPTIONS
-   -d|--database DB   match TEMPLATE against sequences in BLAST database
-   -p|--perc-ident N  percentage identity threshold (default: $PERC_ID)
-   -e|--e-value N     e-value threshold (default: $E_VALUE)
-   -c|--coverage N    query coverage percentage threshold (default: $QCOV_PC)
-   -i|--info TEXT     add TEXT to FASTA headers of generated sequences
-   -n|--no-stats      omit match statistics from the FASTA headers
-   -m|--multiple      allow multiple sequences in TEMPLATE
-   -v|--verbose       emit progress messages to standard error
+   -d, --database DB   match against sequences in DB rather than in files
+   -p, --perc-ident N  percentage identity threshold (default: $PERC_ID)
+   -e, --e-value N     e-value threshold (default: $E_VALUE)
+   -c, --coverage N    query coverage percentage threshold (default: $QCOV_PC)
+   -i, --info TEXT     add TEXT to FASTA headers of generated sequences
+   -n, --no-stats      omit match statistics from the FASTA headers
+   -v, --verbose       emit progress messages to standard error
 
-  TEMPLATE is a FASTA format file containing a single sequence (unless -m).
-  TARGETs are either FASTA format files or, when option -d|--database is
-  present, sequence identifiers.  If no TARGET is specified, read FASTA from
-  standard input, or (with option --database) search through all sequences
-  in the database.
-
-  Matching segments are cut from the targets and writting to stdout as FASTA.
-  A configurable FASTA header is generated for each sequence.  Options -p,
-  -e, and -c specify the matching accuracy parameters.  Options -i and -n
-  modify the headers of the generated FASTA.
+  Matching segments are cut from the targets and written to stdout as FASTA.
+  The generated FASTA headers can be customised using options -i and -n.
+  Options -p, -e, and -c specify the matching accuracy parameters.
 "
     exit ${1:-1}
 }
