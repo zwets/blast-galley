@@ -66,9 +66,13 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
   Excise from each TARGET all sections that match TEMPLATE.
   
   TEMPLATE is a FASTA file.  TARGETs are either FASTA files or sequence
-  identifiers in BLAST database DB (when option --database DB is given).
-  When no TARGET is specified, either read FASTA from standard input, or
-  (with option --database) search all sequences in the database.
+  identifiers in BLAST database DB.  When no TARGET is specified, reads
+  FASTA from standard input, or with option --database searches all
+  sequences in DB.
+
+  Matching segments are written to stdout as FASTA.  Note that matching
+  segments that straddle two or more contigs will not be found.  See the
+  README at github.com/zwets/blast-galley for more information.
 
   OPTIONS
    -d, --database DB   match against sequences in DB rather than in files
@@ -79,7 +83,6 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
    -n, --no-stats      omit match statistics from the FASTA headers
    -v, --verbose       emit progress messages to standard error
 
-  Matching segments are cut from the targets and written to stdout as FASTA.
   The generated FASTA headers can be customised using options -i and -n.
   Options -p, -e, and -c specify the matching accuracy parameters.
 "

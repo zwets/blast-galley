@@ -75,16 +75,19 @@ segment(s) which match a given template, such as a known gene sequence.  It
 is assumed that the sequences are assembled genomes, ideally consisting of
 as few contigs as possible.
 
-@@TODO@@ extend the script so it can detect segments broken across contigs.
-This should be doable by lowering the query coverage threshold, and finding
-subjects whose start or end is overlapped by the query.
+The downside of `gene cutter` is that it won't detect segments broken across
+contigs.  This could be solved by lowering the query coverage threshold so
+as to find subjects whose start or end is overlapped by the query, then
+stitching these together.  (Or use `exonerate` with `affine:overlap` model,
+but the point of `blast-galley` was to use BLAST - with the added pro that
+`gene-cutter` can be used against any BLAST database.)
 
-Note: possibly better ways to 'excise' a gene are (a) mapping reads on the
-template, and (b) processing the reads/assembly using annotation pipeline.
-This script uses only the BLAST command-line utilities (plus the usual
-suspects on any GNU system: bash, sed, tr, awk, etc).
+In general however, when the matches break over contigs, mapping *reads* is
+the easier and better solution.  I've implemented that in
+[mappet](https://github.com/zwets/mappet).  If you don't have reads, you can
+fake them by turning FASTA to FASTQ.
 
-The script is self-contained, use `-h|--help` for documentation.
+The `gene-cutter` script is self-contained; use `-h|--help` for documentation.
 
 
 ## in-silico-pcr
