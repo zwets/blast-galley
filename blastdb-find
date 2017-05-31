@@ -50,7 +50,7 @@ make_cache_file() {
         message "creating metadata cache file (this may take a while): $M"
     fi
 
-    blastdbcmd -db "$DATABASE" -entry all -outfmt '%i    %a    %T    %l    %t' |
+    blastdbcmd -db "$DATABASE" -entry all -outfmt "$(printf '%%i\t%%a\t%%T\t%%l\t%%t')" |
         gzip -9 -c > "$M" || err_exit "failed to create cache file: $M"
 }
 
@@ -67,19 +67,19 @@ Usage: $(basename "$0") [OPTIONS] [FILTERS] [REGEX]
    Matching is case-insensitive.  Absence of the REGEX selects all sequences.
 
   FILTERS
-   -i|--id ID        select on (regex match of ID with) sequence identifier
-   -t|--taxid TAXID  select on NCBI taxonomy identifier
+   -i,--id ID        select on (regex match of ID with) sequence identifier
+   -t,--taxid TAXID  select on NCBI taxonomy identifier
         See http://github.com/zwets/blast-galley/taxo for a taxonomy browser
-   -l|--len LEN      limit results to sequences of at least length LEN
-   -m|--max-len LEN  limit results to sequences of at most length LEN
+   -l,--len LEN      limit results to sequences of at least length LEN
+   -m,--max-len LEN  limit results to sequences of at most length LEN
 
   OPTIONS
-   -d|--db DB      database (default: $DATABASE)
-   -n|--no-update  do not update the metadata cache
-   -u|--use-tmp    use or create metadata cache in /tmp
-   -f|--fasta      output the matching FASTA sequences rather than metadata
-   -v|--verbose    verbose output
-   -h|--help       this help
+   -d,--db DB      database (default: $DATABASE)
+   -n,--no-update  do not update the metadata cache
+   -u,--use-tmp    use or create metadata cache in /tmp
+   -f,--fasta      output the matching FASTA sequences rather than metadata
+   -v,--verbose    verbose output
+   -h,--help       this help
 
   OUTPUT is a tab-separated list with fields: SEQID ACCID TAXID LENGTH TITLE,
   or (with option --fasta) the sequences in FASTA format.
@@ -94,7 +94,7 @@ Usage: $(basename "$0") [OPTIONS] [FILTERS] [REGEX]
   the script will validate that it is not stale and update it when needed.
 
   If the BLAST database directory is not writable, use option -u|--use-tmp to
-  write the cache file to /tmp, or use -n|--no-update to use the (potentially
+  write the cache file to /tmp, or use -n,--no-update to use the (potentially
   stale) existing cache.
   "
     exit ${1:-1}
@@ -206,6 +206,7 @@ if [ -z "$FASTA" ]; then
     zcat "$M" | awk -b -O -F '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY"
 else
     ENTRIES="$(zcat "$M" | awk -b -O -F '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY {print \$1}" | tr '\n' ',')"
+    emit "entries: $ENTRIES"
     blastdbcmd -db "$DATABASE" -entry "$ENTRIES"
 fi
 

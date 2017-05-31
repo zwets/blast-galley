@@ -21,7 +21,6 @@
 # Defaults
 DATABASE="nt"
 COLUMNS="f"
-QUERY=""
 SEP='\t'
 
 # Function to write arguments to stderr if VERBOSE is set
@@ -73,7 +72,7 @@ Usage: $(basename "$0") [OPTIONS] ID ...
 
 # Parse options
 
-unset HEADER
+unset HEADER VERBOSE
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\)..*')" = "-" ]; do
     case $1 in
     --table=*)
@@ -139,7 +138,9 @@ done
 
 OUTFMT="$(echo "$COLUMNS" | sed -re "s/(.)/%\1$SEP/g" -e 's/.$//')"
 
-[ "$COLUMNS" = "f" ] || [ -z "$HEADER" ] || echo "$OUTFMT"
+[ "$COLUMNS" = "f" ] || [ -z "$HEADER" ] || echo "$OUTFMT" |
+    sed -e 's/%a/Accession/;s/%s/Sequence data/;s/%l/Length/;s/%t/Title/;s/%T/TaxID/' \
+        -e 's/%o/OID/;s/%g/GI/;s/%P/PIG/;s/%S/Scientific name/;s/%L/Taxonomic name/'
 
 # Invoke the command
 

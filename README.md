@@ -34,20 +34,18 @@ $ zblast -b "-perc_identity 99 -evalue 0.01"  ...  # pass options to blast
 `blastdb-get` retrieves sequences or metadata from a BLAST database, using
 sequence identifiers such as accession to identify the entry.
 
-```bash
-$ blastdb-get 'X74108.1'
->gi|395160|emb|X74108.1| V.cholerae gene for heat-stable enterotoxin, partial
-TTATTATTTTCTTCAATCGCATTTAGCCAAACAGTAGAAAACAATACAAAAACAGTGCAGCAACCACAACAAATTGAAAG
-CAAGGTAAATATTAAAAAACTAAGTGAAAATGAAGAATGCCCATTTATAAAACAAGTCGATGAAAATGGAAATCTCATTG
-```
+    $ blastdb-get 'X74108.1'
+    >gi|395160|emb|X74108.1| V.cholerae gene for heat-stable enterotoxin, partial
+    TTATTATTTTCTTCAATCGCATTTAGCCAAACAGTAGAAAACAATACAAAAACAGTGCAGCAACCACAACAAATTGAAAG
+    CAAGGTAAATATTAAAAAACTAAGTGAAAATGAAGAATGCCCATTTATAAAACAAGTCGATGAAAATGGAAATCTCATTG
 
-It can return either FASTA sequences, or tabular data about the sequences.
+By default `blastdb-get` returns sequences in FASTA format, but it can also
+output tabular metadata and/or sequence data.
 
-```bash
-$ blastdb-get --table "aTs" EU545988.1 JF260983.1
-EU545988.1      Zika virus      10272   ATGAAAAACCCCAAAGAAGAAATCCGGAGGATCC...
-JF260983.1      Dengue virus    10176   ATGAATAACCAACGGAAAAAGGCGAGAAACACGC...
-```
+    $ blastdb-get --header --table "aTls" EU545988.1 JF260983.1
+    Accession       TaxID           Length  Sequence data
+    EU545988.1      Zika virus      10272   ATGAAAAACCCCAAAGAAGAAATCCGGAGGATCC...
+    JF260983.1      Dengue virus    10176   ATGAATAACCAACGGAAAAAGGCGAGAAACACGC...
 
 
 ## blastdb-find
@@ -56,50 +54,50 @@ Whereas `blastdb-get` retrieves sequences by identifier only, `blastdb-find`
 can also grep through sequence titles or select by taxonomy ID.  By default
 it returns a list, but it can also produce the sequences in FASTA format.
 
-```bash
-$ blastdb-find -t 64320 -t 12637 'polyprotein .*complete cds'
-gb|EU545988.1|  EU545988.1      64320   10272   Zika virus polyprotein gene, complete cds
-gb|DQ859059.1|  DQ859059.1      64320   10254   Zika virus strain MR 766 polyprotein gene, complete cds
-gb|JF260983.1|  JF260983.1      12637   10176   Dengue virus strain EEB-17 polyprotein gene, complete cds
-```
+    $ blastdb-find -t 64320 -t 12637 'polyprotein .*complete cds'
+    gb|EU545988.1|  EU545988.1      64320   10272   Zika virus polyprotein gene, complete cds
+    gb|DQ859059.1|  DQ859059.1      64320   10254   Zika virus strain MR 766 polyprotein gene, complete cds
+    gb|JF260983.1|  JF260983.1      12637   10176   Dengue virus strain EEB-17 polyprotein gene, complete cds
 
-`blastdb-find` can do a superset of what `blastdb-get` can do, but it needs
+Though `blastdb-find` can do a superset of what `blastdb-get` can do, it needs
 to maintain a cache of metadata per BLAST database.  For 'key-based' queries,
 `blastdb-get` is generally faster, simpler, and more configurable.
 
 
 ## gene-cutter
 
-`gene-cutter` solves the problem of excising from one or more sequences the
-segment(s) which match a given template, such as a known gene sequence.  It
-is assumed that the sequences are assembled genomes, ideally consisting of
-as few contigs as possible.
+`gene-cutter` excises from one or more sequences the segment(s) which match
+a given template, such as a known gene sequence.  It can operate on FASTA
+files or against sequences in a BLAST database.
 
-The downside of `gene cutter` is that it won't detect segments broken across
-contigs.  This could be solved by lowering the query coverage threshold so
-as to find subjects whose start or end is overlapped by the query, then
-stitching these together.  (Or use `exonerate` with `affine:overlap` model,
-but the point of `blast-galley` was to use BLAST - with the added pro that
-`gene-cutter` can be used against any BLAST database.)
+The sequences being searched through should ideally consist of as few contigs
+as possible, as `gene-cutter` won't detect matches that straddle contigs.
+When matches break across contigs, mapping *reads* is the better solution.
+I've implemented that in [mappet](https://github.com/zwets/mappet).  If you
+don't have reads, you could fake them by turning FASTA to FASTQ.
 
-In general however, when the matches break over contigs, mapping *reads* is
-the easier and better solution.  I've implemented that in
-[mappet](https://github.com/zwets/mappet).  If you don't have reads, you can
-fake them by turning FASTA to FASTQ.
+`gene-cutter` could be extended to work around fragmented matches, for instance
+by lowering the query coverage threshold so as to find subjects whose start or
+end is overlapped by the query, then stitching these together.  Alternatively,
+we could use `exonerate` with `affine:overlap` model.  The point of
+[blast-galley](https://github.com/zwets/blast-galley) however was to use just
+BLAST - with the added pro that `gene-cutter` can be used against any BLAST
+database.
 
-The `gene-cutter` script is self-contained; use `-h|--help` for documentation.
+The `gene-cutter` script is self-contained; use `-h, --help` for documentation.
 
 
-## in-silico-pcr
+## blast-in-silico-pcr
 
-`in-silico-pcr.sh` is a bash script which tests pairs of PCR primers against a
-local BLAST database and returns the fragments selected by the primers.
+`blast-in-silico-pcr` is a bash script which tests pairs of PCR primers against
+a local BLAST database and returns the fragments selected by the primers.
 
 The online in-silico PCR services at [EHU](http://insilico.ehu.es/PCR/index.php)
 and [NCBI](http://www.ncbi.nlm.nih.gov/tools/primer-blast/) do the same thing
-and probably do it better and faster.
+and may do a better job.  This script was intended as a quick shot at doing
+isPCR using only BLAST commands.
 
-The script is self-contained; the usual `-h|--help` gives documentation.
+The script is self-contained; the usual `-h, --help` gives documentation.
 
 
 ## taxo
