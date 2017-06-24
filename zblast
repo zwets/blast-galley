@@ -13,7 +13,8 @@ TMPFILE="/tmp/$(basename "$0").$$"
 # Defaults
 TASK="n"
 DATABASE="nt"
-THREADS=4
+THREADS=$(($(nproc) - 1))
+[ $THREADS != 0 ] || THREADS=1
 
 # Cleanup and exit at first error to occur
 set -e
@@ -22,114 +23,113 @@ RETVAL=1
 
 # Function to write the arguments to stderr if VERBOSE is set
 emit() {
-	if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi
+    if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi
 }
 
 # Function to exit this script with an error message on stderr
 err_exit() {
-	echo "$(basename "$0"): $*" >&2
-	exit 1
+    echo "$(basename "$0"): $*" >&2
+    exit 1
 }
 
 # Function to cleanup at exit, trapped on EXIT
 cleanup() {
-        emit "clean up, remove $TMPFILE" 
-	rm -f "$TMPFILE" || true
-        exit $RETVAL
+    emit "clean up, remove $TMPFILE" 
+    rm -f "$TMPFILE" || true
+    exit $EXIT_STATUS
 }
 
 # Function to show usage information and exit
 usage_exit() {
-	RETVAL=${1:-1}
-	echo
-	echo "Usage: $(basename "$0") [options] [sequence]"
-	echo
-	echo "  Blast sequence against local blast database."
-	echo "  If no sequence is given, reads from stdin."
-	echo "  If sequence is a valid filename, reads that."
-	echo
-	echo "  Options"
-	echo "   -t|--task TASK        n, s, m, d (default: n)"
-	echo "   -d|--db DB            database (default: $DATABASE)"
-	echo "   -b|--blast-opts OPTS  pass additional OPTS to blast"
-	echo "   -v|--verbose          verbose output"
-	echo "   -h|--help             this help"
-	echo 
-	exit
+    echo "
+Usage: $(basename "$0") [options] [sequence]
+
+  Blast sequence against local blast database.
+  If no sequence is given, reads from stdin.
+  If sequence is a valid filename, reads that.
+
+  Options
+   -t|--task TASK        n, s, m, d (default: $TASK)
+   -d|--db DB            database (default: $DATABASE)
+   -b|--blast-opts OPTS  pass additional OPTS to blast
+   -v|--verbose          verbose output
+   -h|--help             this help
+" >&2
+    EXIT_STATUS=${1:-1}
+    exit
 }
 
 # Parse options
 
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
-	case $1 in
-	--task=*)
-                TASK=${1#--task=}
-                ;;
-	-t|--task)
-		shift
-                TASK=$1
-                ;;
-	--db=*)
-                DATABASE=${1#--db=}
-                ;;
-        -d|--db|--database)
-                shift
-                DATABASE=$1
-                ;;
-	--b=*|--blast-opts=*)
-                BLAST_OPTS="${1#--blast-opts=}"
-                ;;
-        -b|--blast-opts)
-                shift
-                BLAST_OPTS="$1"
-                ;;
-	-h|--help)
-		usage_exit 0
-		;;
-	-v|--verbose)
-		VERBOSE=1
-		;;
-	*) usage_exit
-		;;
-	esac
-	shift
+    case $1 in
+    --task=*)
+        TASK=${1#--task=}
+        ;;
+    -t|--task)
+        shift
+        TASK=$1
+        ;;
+    --db=*)
+        DATABASE=${1#--db=}
+        ;;
+    -d|--db|--database)
+        shift
+        DATABASE=$1
+        ;;
+    --blast-opts=*)
+        BLAST_OPTS="${1#--blast-opts=}"
+        ;;
+    -b|--blast*)
+        shift
+        BLAST_OPTS="$1"
+        ;;
+    -h|--help)
+        usage_exit 0
+        ;;
+    -v|--verbose)
+        VERBOSE=1
+        ;;
+    *) usage_exit
+        ;;
+    esac
+    shift
 done
 
 # Check environment for NCBI Blast+
 
-[ -n "$NCBI" ] || [ -n "$BLASTDB" ] || err_exit "either BLASTDB or NCBI must be set (see http://io.zwets.it/blast-cmdline-ref)"
+[ -n "$BLASTDB" ] && [ -f "$BLASTDB/${DATABASE}.nhr" ] || [ -n "$NCBI" ] || [ -f "${DATABASE}.nhr" ] ||
+    err_exit "NCBI nor BLASTDB are set, and $DATABASE is not found"
 
 # Check and convert arguments
 
 case "$TASK" in 
-	n)	TASK="blastn" ;;
-	m)	TASK="megablast" ;;
-	d)	TASK="dc-megablast" ;;
-	s)	TASK="blastn-short" ;;
-	*)	usage_exit ;;
+    n)    TASK="blastn" ;;
+    m)    TASK="megablast" ;;
+    d)    TASK="dc-megablast" ;;
+    s)    TASK="blastn-short" ;;
+    *)    usage_exit ;;
 esac
 
 # Parse optional argument
 
 if [ $# -eq 1 ]; then
-	if [ -f "$1" ]; then
-		emit "Blasting sequence from file"
-		cat "$1" > "$TMPFILE"
-	else
-		emit "Blasting sequence passed on command line"
-		echo "$1" > "$TMPFILE"
-	fi
+    if [ -f "$1" ]; then
+        emit "Blasting sequence from file"
+        ln -sf "$1" "$TMPFILE"
+    else
+        emit "Blasting sequence passed on command line"
+        echo "$1" > "$TMPFILE"
+    fi
 else
-	emit "Reading sequence from stdin"
-	cat > "$TMPFILE"
+    emit "Reading sequence from stdin"
+    cat > "$TMPFILE"
 fi
 
-# TODO: check if query less than 50 bases, then use task blastn-short
-#       but check first that blastn doesn't do this already
+# TODO: check if query less than 50 bases, then use task blastn-short?
 
-blastn -num_threads $(nproc) -task "$TASK" -db "$DATABASE" $BLAST_OPTS -query "$TMPFILE" 
-
-RETVAL=$?
-
+blastn -num_threads $THREADS -task "$TASK" -db "$DATABASE" $BLAST_OPTS -query "$TMPFILE" 
+EXIT_STATUS=$?
 exit
 
+# vim: sts=4:sw=4:et:si:ai
