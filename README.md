@@ -72,17 +72,17 @@ files or against sequences in a BLAST database.
 
 The sequences being searched through should ideally consist of as few contigs
 as possible, as `gene-cutter` won't detect matches that straddle contigs.
-When matches break across contigs, mapping *reads* is the better solution.
-I've implemented that in [mappet](https://github.com/zwets/mappet).  If you
-don't have reads, you could fake them by turning FASTA to FASTQ.
+When matches break across contigs, mapping *reads* is the alternative.  I've
+implemented that in [mappet](https://github.com/zwets/mappet).  In practice
+though, if `gene-cutter` gives a result, then it is both quick and accurate.
 
 `gene-cutter` could be extended to work around fragmented matches, for instance
 by lowering the query coverage threshold so as to find subjects whose start or
 end is overlapped by the query, then stitching these together.  Alternatively,
 we could use `exonerate` with `affine:overlap` model.  The point of
-[blast-galley](https://github.com/zwets/blast-galley) however was to use just
-BLAST - with the added pro that `gene-cutter` can be used against any BLAST
-database.
+[blast-galley](https://github.com/zwets/blast-galley) however was to use only
+BLAST - with the added advantage that `gene-cutter` can be used against any
+BLAST database.
 
 The `gene-cutter` script is self-contained; use `-h, --help` for documentation.
 
