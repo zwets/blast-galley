@@ -42,18 +42,18 @@ cleanup() {
 # Function to show usage information and exit
 usage_exit() {
     echo "
-Usage: $(basename "$0") [options] [sequence]
+Usage: $(basename "$0") [OPTIONS] [SEQUENCE]
 
   Blast sequence against local blast database.
   If no sequence is given, reads from stdin.
   If sequence is a valid filename, reads that.
 
   Options
-   -t|--task TASK        n, s, m, d (default: $TASK)
-   -d|--db DB            database (default: $DATABASE)
-   -b|--blast-opts OPTS  pass additional OPTS to blast
-   -v|--verbose          verbose output
-   -h|--help             this help
+   -t, --task TASK        n, s, m, d (default: $TASK)
+   -d, --db DB            database (default: $DATABASE)
+   -b, --blast-opts OPTS  pass additional OPTS to blast
+   -v, --verbose          verbose output
+   -h, --help             this help
 " >&2
     EXIT_STATUS=${1:-1}
     exit
