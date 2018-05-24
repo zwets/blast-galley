@@ -20,6 +20,7 @@
 
 # Defaults
 
+export LC_ALL="C"
 BLAST_DB=nt
 MAX_LEN=3000
 MAX_MIS=2
@@ -160,7 +161,7 @@ BEGIN {
         }
     }
     close(FWD_BLAST_CSV)
-    print "seq_id", "length", "strand", "start", "end", "mm_fwd", "mm_rev", "tax_id", "sci_name", "seq_len", "seq_title"
+    print "#seq_id", "length", "strand", "start", "end", "mm_fwd", "mm_rev", "tax_id", "sci_name", "seq_len", "seq_title"
 }
 # For every line with at most MAX_MIS mismatches
 $7 + MAX_MIS >= $5 {
