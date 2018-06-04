@@ -22,7 +22,8 @@
 
 export LC_ALL="C"
 BLAST_DB=nt
-MAX_LEN=3000
+MIN_LEN=1
+MAX_LEN=5000
 MAX_MIS=2
 
 # Function to emit information to standard error if VERBOSE is set
@@ -59,8 +60,9 @@ Usage: $(basename $0) [OPTIONS] FILE
 
   OPTIONS
    -d,--database DB   BLAST against database DB (default: $BLAST_DB)
-   -m,--mismatches N  mismatch count allowed per primer (default: $MAX_MIS)
-   -l,--length L      maximum allowed segment length (default: $MAX_LEN)
+   -m,--mismatches M  mismatch count allowed per primer (default: $MAX_MIS)
+   -b,--min-len B     minimum required selection length (default: $MIN_LEN)
+   -t,--max-len T     maximum allowed selection length (default: $MAX_LEN)
    -k,--keep          keep and reuse intermediate files
    -v,--verbose       emit progress messages to standard error
 "
@@ -74,21 +76,28 @@ unset VERBOSE KEEP
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
     -m|--mismatches)
-        shift
+        shift || usage_exit
         MAX_MIS=$1
         ;;
     --mismatches=*)
         MAX_MIS="${1#--mismatches=}"
         ;;
-    -l|--length)
-        shift
+    -t|--max-len)
+        shift || usage_exit
         MAX_LEN=$1
         ;;
-    --length=*)
-        MAX_LEN="${1#--length=}"
+    --max-len=*)
+        MAX_LEN="${1#--max-len=}"
+        ;;
+    -b|--min-len)
+        shift || usage_exit
+        MIN_LEN=$1
+        ;;
+    --min-len=*)
+        MIN_LEN="${1#--min-len=}"
         ;;
     -d|-db|--db)
-        shift
+        shift || usage_exit
         BLAST_DB=$1
         ;;
     -k|--keep)
@@ -109,6 +118,8 @@ done
 # Check the argument
 
 [ $# -eq 1 ] || usage_exit
+[ $MIN_LEN -gt 0 ] || err_exit "minimum length must be non-zero positive"
+[ $MAX_LEN -ge $MIN_LEN ] || err_exit "maximum length must not be smaller than minimum length"
 
 PRIMERS_FILE="$1"
 [ -r "$PRIMERS_FILE" ] || err_exit "cannot read file: $PRIMERS_FILE"
@@ -151,7 +162,7 @@ fi
 clean_up "$FWD_SEQIDS" "$REV_PRIMER"
 
 emit "Join the two BLAST results"
-awk -b -O -F '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
+awk -b -O -F '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MIN_LEN=$MIN_LEN -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
 BEGIN {
     OFS=FS                              # Tab-separated output
     while (getline <FWD_BLAST_CSV == 1) {
@@ -171,7 +182,7 @@ $7 + MAX_MIS >= $5 {
         epos = $2 == "minus" ? $3 : fwd[$1][3]		# end position is the start on the minus strand
         len = 1 + epos - spos
         # Select if length not negative (PCR will not meet), and within length limit
-        if (len > 0 && len <= MAX_LEN) {
+        if (len >= MIN_LEN && len <= MAX_LEN) {
             print $1, len, fwd[$1][2], spos, epos, fwd[$1][5] - fwd[$1][7], $5 - $7, $9, $10, $11, $12
         }
     }
