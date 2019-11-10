@@ -90,7 +90,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
    -p, --perc-ident N  percentage identity threshold (default: $PERC_ID)
    -e, --e-value N     e-value threshold (default: $E_VALUE)
    -c, --coverage N    query coverage percentage threshold (default: $QCOV_PC)
-   -t, --translate     input is protein sequence, use tblastn
+   -t, --protein       do a protein search against nucleotide database (tblastn)
    -i, --info TEXT     add TEXT to FASTA headers of generated sequences
    -n, --no-stats      omit match statistics from the FASTA headers
    -v, --verbose       emit progress messages to standard error
@@ -144,8 +144,8 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     --coverage=*)
         QCOV_PC="${1#--coverage=}"
         ;;
-    -t|--translate)
-        PROTEIN="t"
+    -t|--protein)
+        PROTEIN=1
         ;;
     -v|--verbose)
         VERBOSE=1
