@@ -42,9 +42,17 @@ BLAST_OUTFMT="6 qacc qstart qend qlen sacc sstart send length evalue pident bits
 
 # Function to perform the BLAST query; args $* are added to its end
 blast_query() {
-    blastn -task blastn ${DATABASE:+-num_threads $(nproc)} -parse_deflines \
+    if [ -z "$PROTEIN" ]; then
+      blastn -task blastn ${DATABASE:+-num_threads $(nproc)} \
+        -parse_deflines \
         -evalue "$E_VALUE" -perc_identity "$PERC_ID" -qcov_hsp_perc "$QCOV_PC" \
         -query "$TEMPLATE_FILE" -outfmt "$BLAST_OUTFMT" $*
+    else
+      tblastn -task tblastn ${DATABASE:+-num_threads $(nproc)} \
+        -parse_deflines \
+        -evalue "$E_VALUE" -qcov_hsp_perc "$QCOV_PC" \
+        -query "$TEMPLATE_FILE" -outfmt "$BLAST_OUTFMT" $*
+    fi
 }
 
 # Function to process the BLAST output into FASTA
@@ -74,11 +82,15 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
   segments that straddle two or more contigs will not be found.  See the
   README at github.com/zwets/blast-galley for more information.
 
+  The TEMPLATE can be a nucleotide (default) or amino acid sequence (use
+  option --translate).  The target must currently be nucleotides.
+
   OPTIONS
    -d, --database DB   match against sequences in DB rather than in files
    -p, --perc-ident N  percentage identity threshold (default: $PERC_ID)
    -e, --e-value N     e-value threshold (default: $E_VALUE)
    -c, --coverage N    query coverage percentage threshold (default: $QCOV_PC)
+   -t, --translate     input is protein sequence, use tblastn
    -i, --info TEXT     add TEXT to FASTA headers of generated sequences
    -n, --no-stats      omit match statistics from the FASTA headers
    -v, --verbose       emit progress messages to standard error
@@ -91,7 +103,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
 
 # Parse options
 
-unset DATABASE INFO VERBOSE
+unset DATABASE INFO VERBOSE PROTEIN
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
     --db=*)
@@ -131,6 +143,9 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
         ;;
     --coverage=*)
         QCOV_PC="${1#--coverage=}"
+        ;;
+    -t|--translate)
+        PROTEIN="t"
         ;;
     -v|--verbose)
         VERBOSE=1
