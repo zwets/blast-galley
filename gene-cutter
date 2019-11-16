@@ -44,12 +44,10 @@ BLAST_OUTFMT="6 qacc qstart qend qlen sacc sstart send length evalue pident bits
 blast_query() {
     if [ -z "$PROTEIN" ]; then
       blastn -task blastn ${DATABASE:+-num_threads $(nproc)} \
-        -parse_deflines \
         -evalue "$E_VALUE" -perc_identity "$PERC_ID" -qcov_hsp_perc "$QCOV_PC" \
         -query "$TEMPLATE_FILE" -outfmt "$BLAST_OUTFMT" $*
     else
       tblastn -task tblastn ${DATABASE:+-num_threads $(nproc)} \
-        -parse_deflines \
         -evalue "$E_VALUE" -qcov_hsp_perc "$QCOV_PC" \
         -query "$TEMPLATE_FILE" -outfmt "$BLAST_OUTFMT" $*
     fi
