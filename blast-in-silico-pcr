@@ -55,8 +55,7 @@ Usage: $(basename $0) [OPTIONS] FILE
   Perform in silico PCR for primer pair in FILE against BLAST database DB.
 
   FILE must be FASTA format with one line for the forward primer in 5' to 3'
-  direction, and one line for the reverse primer in 5' to 3' direction.  Both
-  lines must be preceded by a comment line starting with '>'.
+  direction, and one line for the reverse primer in 5' to 3' direction.
 
   OPTIONS
    -d,--database DB   BLAST against database DB (default: $BLAST_DB)
@@ -151,7 +150,11 @@ fi
 clean_up "$FWD_PRIMER"
 
 emit "Extract the seqid list: $FWD_SEQIDS"
-[ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || awk -F '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS"
+[ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || { 
+    awk -F '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
+    blastdb_aliastool -seqid_file_in "$FWD_SEQIDS.tmp" -seqid_file_out "$FWD_SEQIDS" && 
+    rm -f "$FWD_SEQIDS.tmp" || mv -f "$FWD_SEQIDS.tmp" "$FWD_SEQIDS"
+}
 
 emit "BLAST the reverse primer against the sequences from the forward primer blast"
 [ -n "$KEEP" -a -r "$REV_BLAST" ] || if ! blastn -task blastn-short -db "$BLAST_DB" -query "$REV_PRIMER" -seqidlist "$FWD_SEQIDS" -ungapped -outfmt "$BLAST_OUTFMT" | grep -v '^#' > "$REV_BLAST"; then
