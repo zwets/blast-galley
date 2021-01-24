@@ -57,6 +57,9 @@ Usage: $(basename $0) [OPTIONS] FILE
   FILE must be FASTA format with one line for the forward primer in 5' to 3'
   direction, and one line for the reverse primer in 5' to 3' direction.
 
+  BLAST database DB can be produced from a fasta file using makeblastdb:
+  makeblastdb -in {FASTA_FILE} -out {DB_FILE} -dbtype nucl -parse_seqids
+
   OPTIONS
    -d,--database DB   BLAST against database DB (default: $BLAST_DB)
    -m,--mismatches M  mismatch count allowed per primer (default: $MAX_MIS)
