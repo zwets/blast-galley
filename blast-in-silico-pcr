@@ -33,7 +33,7 @@ err_exit() { echo "$(basename "$0"): $*" >&2; exit 1; }
 
 # Function to clean up files if keep is set
 clean_up() {
-    [ -z "$KEEP" ] && 
+    [ -z "$KEEP" ] &&
         emit "cleaning up, removing: $@" && rm -f "$@" ||
         emit "keeping intermediate file(s): $@"
 }
@@ -129,7 +129,7 @@ FWD_SEQIDS="blast.fwd.seqids"
 REV_BLAST="blast.rev.tsv"
 TSV_OUTPUT="pcr.matches.tsv"
 FASTA_OUT="pcr.products.fna"
-BLAST_OUTFMT="7 sseqid sstrand sstart send qlen length nident mismatch staxids sscinames slen stitle"
+BLAST_OUTFMT="7 sacc sstrand sstart send qlen length nident mismatch staxids sscinames slen stitle"
 
 # Do the work
 
@@ -148,9 +148,9 @@ fi
 clean_up "$FWD_PRIMER"
 
 emit "extract the forward finds: $FWD_SEQIDS"
-[ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || { 
+[ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || {
     gawk -bOF '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
-    blastdb_aliastool -seqid_file_in "$FWD_SEQIDS.tmp" -seqid_file_out "$FWD_SEQIDS" && 
+    blastdb_aliastool -seqid_file_in "$FWD_SEQIDS.tmp" -seqid_file_out "$FWD_SEQIDS" &&
     rm -f "$FWD_SEQIDS.tmp" || mv -f "$FWD_SEQIDS.tmp" "$FWD_SEQIDS"
 }
 
@@ -194,23 +194,23 @@ clean_up "$FWD_BLAST" "$REV_BLAST"
 
 emit "retrieve the product sequences"
 tail -n +2 "$TSV_OUTPUT" | while read CONTIG LEN STRAND FROM TO REST; do
-    N_PROD=$((N_PROD+1))
-    blastdbcmd -db "$BLAST_DB" -entry "$CONTIG" | gawk -bO -v N_PROD="$N_PROD" -v CONTIG="$CONTIG" -v LEN="$LEN" -v FROM="$FROM" -v TO="$TO" -v STRAND="$STRAND" '
-       NR==1 { print ">pcr_prod_" N_PROD " [contig=" CONTIG "; pos=" FROM "-" TO "; len=" LEN "; strand=" STRAND "] " substr($0,2) }
-       NR!=1 { SEQ = SEQ $0 }
-       END { 
-         SEQ = substr(SEQ, FROM, LEN)
-         if (STRAND == "plus") print SEQ; else { 
-           for (i = length(SEQ); i > 0; --i) {
-             c = substr (SEQ,i,1)
-             p = index ("AaCcGgTtNnKkMmSsWwYyRrBbVvDdHh", c)
-             if (!p) { print "blast-in-silico-pcr: invalid character in sequence: " c; exit 1; }
-             c = substr("TtGgCcAaNnMmKkWwSsRrYyVvBbHhDd", p, 1)
-             printf "%c", c
-           }
-           printf "\n"
-         }
-       }'
+    NPROD=$((N_PROD+1))
+    blastdbcmd -db "$BLAST_DB" -entry "$CONTIG" -range "$FROM-$TO" |
+    gawk -bO -v NPROD="$NPROD" -v STRAND="$STRAND" -v INFO="[contig=$CONTIG; pos=$FROM-$TO; len=$LEN; strand=$STRAND]" '
+        NR==1 { print ">pcr_prod_" NPROD " " INFO " " substr($0,2) }
+        NR!=1 { SEQ = SEQ $0 }
+        END {
+          if (STRAND == "plus") print SEQ; else {
+            for (i = length(SEQ); i > 0; --i) {
+              c = substr (SEQ,i,1)
+              p = index ("AaCcGgTtNnKkMmSsWwYyRrBbVvDdHh", c)
+              if (!p) { print "blast-in-silico-pcr: invalid character in sequence: " c; exit 1; }
+              c = substr("TtGgCcAaNnMmKkWwSsRrYyVvBbHhDd", p, 1)
+              printf "%c", c
+            }
+            printf "\n"
+          }
+        }'
 done | tee "$FASTA_OUT"
 
 clean_up "$TSV_OUTPUT" "$FASTA_OUT"
