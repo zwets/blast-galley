@@ -14,6 +14,13 @@ These tools were developed for my own use, but I've tried to make them
 self-contained (all have `--help`) so they may be of use to others.
 
 
+## Prerequisites
+
+* Several tools make use of GNU awk (`gawk`), which is available in every Linux
+  distribution.  Recent Debian/Ubuntu versions install `mawk` rather than `gawk`
+  by default, so you may need to `apt install gawk`.
+
+
 ## zblast
 
 `zblast` is a very thin wrapper around the blast command.  I use it because

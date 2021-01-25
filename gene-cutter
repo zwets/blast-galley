@@ -55,7 +55,7 @@ blast_query() {
 
 # Function to process the BLAST output into FASTA
 process_output() {
-awk -b -O -F '\t' -v INFO="${INFO:-Segment}" -v STATS=$STATS '{
+gawk -bOF '\t' -v INFO="${INFO:-Segment}" -v STATS=$STATS '{
     printf ">lcl|cut%04d %s from %s %s matching %s", NR, INFO, $5, $18, $1
     if (STATS) printf " (len %d/%d %.1f%, pos %d..%d; e=%.3f, p=%.1f%, b=%s; i=%d, g=%d)", $8, $4, $13, $6, $7, $9, $10, $11, $14, $15
     printf "\n"

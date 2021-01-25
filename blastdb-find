@@ -19,7 +19,7 @@
 #  Part of http://io.zwets.it/blast-galley
 
 # Defaults
-DATABASE="nt"
+DATABASE="nt_v5"
 
 # Function to write the arguments to stderr if VERBOSE is set
 emit() {
@@ -203,9 +203,9 @@ AWK_QUERY="1"
 # And go
 emit "awk query: $AWK_QUERY"
 if [ -z "$FASTA" ]; then
-    zcat "$M" | awk -b -O -F '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY"
+    zcat "$M" | gawk -bOF '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY"
 else
-    ENTRIES="$(zcat "$M" | awk -b -O -F '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY {print \$1}" | tr '\n' ',')"
+    ENTRIES="$(zcat "$M" | gawk -bOF '\t' -v IGNORECASE=1 -v R="$REGEX" "$AWK_QUERY {print \$1}" | tr '\n' ',')"
     emit "entries: $ENTRIES"
     blastdbcmd -db "$DATABASE" -entry "$ENTRIES"
 fi

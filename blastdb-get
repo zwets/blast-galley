@@ -19,7 +19,7 @@
 #  Part of http://io.zwets.it/blast-galley
 
 # Defaults
-DATABASE="nt"
+DATABASE="nt_v5"
 COLUMNS="f"
 SEP='\t'
 
