@@ -18,32 +18,24 @@
 #
 #  Part of http://io.zwets.it/blast-galley
 
-# Defaults
-
 export LC_ALL="C"
+
+# Defaults
 MIN_LEN=1
 MAX_LEN=5000
 MAX_MIS=2
 
 # Function to emit information to standard error if VERBOSE is set
-emit() {
-    [ -z "$VERBOSE" ] || echo "$(basename "$0"): $*" >&2
-}
+emit() { [ -z "$VERBOSE" ] || echo "$(basename "$0"): $*" >&2; }
 
 # Function to exit this script with an error message on stderr
-err_exit() {
-    echo "$(basename "$0"): $*" >&2
-    exit 1
-}
+err_exit() { echo "$(basename "$0"): $*" >&2; exit 1; }
 
 # Function to clean up files if keep is set
 clean_up() {
-    if [ -z "$KEEP" ]; then
-        emit "cleaning up, removing: $@"
-        rm -f "$@"
-    else
+    [ -z "$KEEP" ] && 
+        emit "cleaning up, removing: $@" && rm -f "$@" ||
         emit "keeping intermediate file(s): $@"
-    fi
 }
 
 # Function to show usage information and exit
@@ -75,63 +67,37 @@ Usage: $(basename $0) [OPTIONS] PRIMERS [TARGET]
 # Parse options
 
 unset VERBOSE KEEP UNIQUIFY
-
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
-    -m|--mismatches)
-        shift || usage_exit
-        MAX_MIS=$1
-        ;;
-    --mismatches=*)
-        MAX_MIS="${1#--mismatches=}"
-        ;;
-    -b|--min-len)
-        shift || usage_exit
-        MIN_LEN=$1
-        ;;
-    --min-len=*)
-        MIN_LEN="${1#--min-len=}"
-        ;;
-    -t|--max-len)
-        shift || usage_exit
-        MAX_LEN=$1
-        ;;
-    --max-len=*)
-        MAX_LEN="${1#--max-len=}"
-        ;;
-    -u|--uniquify*)
-        UNIQUIFY=1
-        ;;
-    -k|--keep)
-        KEEP=1
-        ;;
-    -v|--verbose)
-        VERBOSE=1
-        ;;
-    -h|--help)
-        usage_exit 0
-        ;;
-    *) usage_exit
-        ;;
+    -m|--mismatches) shift || usage_exit; MAX_MIS=$1 ;;
+    --mismatches=*)  MAX_MIS="${1#--mismatches=}" ;;
+    -b|--min-len)    shift || usage_exit; MIN_LEN=$1 ;;
+    --min-len=*)     MIN_LEN="${1#--min-len=}" ;;
+    -t|--max-len)    shift || usage_exit; MAX_LEN=$1 ;;
+    --max-len=*)     MAX_LEN="${1#--max-len=}" ;;
+    -u|--uniquify*)  UNIQUIFY=1 ;;
+    -k|--keep)       KEEP=1 ;;
+    -v|--verbose)    VERBOSE=1 ;;
+    -h|--help)       usage_exit 0 ;;
+    *) usage_exit ;;
     esac
     shift
 done
 
-# Check the argument
+# Check the arguments
 
 [ $# -ge 1 ] || usage_exit
 [ $MIN_LEN -gt 0 ] || err_exit "minimum length must be non-zero positive"
 [ $MAX_LEN -ge $MIN_LEN ] || err_exit "maximum length must not be smaller than minimum length"
 
 PRIMERS_FILE="$1"
-[ -r "$PRIMERS_FILE" ] || err_exit "cannot read file: $PRIMERS_FILE"
+[ -r "$PRIMERS_FILE" ] || err_exit "cannot read primer file: $PRIMERS_FILE"
 [ $(grep -v '^>' "$PRIMERS_FILE" | grep -v '^$' | wc -l) -eq 2 ] || err_exit "file must have two primers: $PRIMERS_FILE"
 
 TARGET="${2:-"-"}"
-
-# Check whether target is stdin or an existing file, then we read FASTA
 if [ "$TARGET" = '-' ] || [ -f "$TARGET" ]; then
 
+    # TARGET is stdin or a file, we read FASTA
     TMP_BLASTDB_DIR="blast.tmpdir"
     mkdir -p "$TMP_BLASTDB_DIR"
     BLAST_DB="$TMP_BLASTDB_DIR/target"
@@ -141,19 +107,20 @@ if [ "$TARGET" = '-' ] || [ -f "$TARGET" ]; then
         gawk -bO '/^>/ { print ">U" NR "_" substr($0,2) } /^[^>]/' "$TARGET"
     else
         cat "$TARGET"
-    fi | 
+    fi |
     makeblastdb -out "$BLAST_DB" -title "target" -dbtype nucl -parse_seqids >/dev/null ||
         err_exit "failed to create BLAST database: $BLAST_DB"
+
     blastdbcmd -db "$BLAST_DB" -info >/dev/null || err_exit "failed to create temporary BLAST database: $TARGET"
 
- # Else we assume TARGET is the name or path of a BLAST database
-else
+else # TARGET is not a file or '-', we assume it is the name of a BLAST database
+
     BLAST_DB="$TARGET"
     emit "check that TARGET is a BLAST database: $TARGET"
     blastdbcmd -db "$BLAST_DB" -info >/dev/null || err_exit "target is neither a file nor a BLAST database: $TARGET"
 fi
 
-# Set up variables
+# Set up variables for the intermediary files
 
 FWD_PRIMER="primer.fwd.fna"
 REV_PRIMER="primer.rev.fna"
@@ -172,7 +139,7 @@ emit "extract the forward primer: $FWD_PRIMER"
 emit "extract the reverse primer: $REV_PRIMER"
 [ -n "$KEEP" -a -r "$REV_PRIMER" ] || grep -v '^>' "$PRIMERS_FILE" | grep -v '^$' | tail -n 1 > "$REV_PRIMER"
 
-emit "BLAST the forward primer against database '$BLAST_DB': $FWD_BLAST"
+emit "BLAST the forward primer: $FWD_BLAST"
 [ -n "$KEEP" -a -r "$FWD_BLAST" ] || if ! blastn -task blastn-short -db "$BLAST_DB" -query "$FWD_PRIMER" -ungapped -outfmt "$BLAST_OUTFMT" | grep -v '^#' > "$FWD_BLAST"; then
     clean_up "$FWD_PRIMER" "$REV_PRIMER" "$FWD_BLAST"
     err_exit "BLAST of forward primer against database $BLAST_DB failed"
@@ -187,7 +154,7 @@ emit "extract the forward finds: $FWD_SEQIDS"
     rm -f "$FWD_SEQIDS.tmp" || mv -f "$FWD_SEQIDS.tmp" "$FWD_SEQIDS"
 }
 
-emit "BLAST the reverse primer against the forward finds: $REV_BLAST"
+emit "BLAST the reverse primers: $REV_BLAST"
 [ -n "$KEEP" -a -r "$REV_BLAST" ] || if ! blastn -task blastn-short -db "$BLAST_DB" -query "$REV_PRIMER" -seqidlist "$FWD_SEQIDS" -ungapped -outfmt "$BLAST_OUTFMT" | grep -v '^#' > "$REV_BLAST"; then
     clean_up "$FWD_PRIMER" "$REV_PRIMER" "$FWD_SEQIDS" "$FWD_BLAST" "$REV_BLAST"
     err_exit "BLAST of reverse primer against database $BLAST_DB failed"
@@ -223,6 +190,8 @@ $7 + MAX_MIS >= $5 {
 }
 ' "$REV_BLAST" >"$TSV_OUTPUT"
 
+clean_up "$FWD_BLAST" "$REV_BLAST"
+
 emit "retrieve the product sequences"
 tail -n +2 "$TSV_OUTPUT" | while read CONTIG LEN STRAND FROM TO REST; do
     N_PROD=$((N_PROD+1))
@@ -244,7 +213,7 @@ tail -n +2 "$TSV_OUTPUT" | while read CONTIG LEN STRAND FROM TO REST; do
        }'
 done | tee "$FASTA_OUT"
 
-clean_up "$FASTA_OUT" "$FWD_BLAST" "$REV_BLAST"
+clean_up "$TSV_OUTPUT" "$FASTA_OUT"
 [ -n "$KEEP" ] || [ ! -d "$TMP_BLASTDB_DIR" ] || rm -rf "$TMP_BLASTDB_DIR"
 
 exit 0
