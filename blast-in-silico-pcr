@@ -69,11 +69,11 @@ Usage: $(basename $0) [OPTIONS] PRIMERS [TARGET]
 unset VERBOSE KEEP UNIQUIFY
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
-    -m|--mismatches) shift || usage_exit; MAX_MIS=$1 ;;
+    -m|--mismatches) shift; MAX_MIS=$1 ;;
     --mismatches=*)  MAX_MIS="${1#--mismatches=}" ;;
-    -b|--min-len)    shift || usage_exit; MIN_LEN=$1 ;;
+    -b|--min-len)    shift; MIN_LEN=$1 ;;
     --min-len=*)     MIN_LEN="${1#--min-len=}" ;;
-    -t|--max-len)    shift || usage_exit; MAX_LEN=$1 ;;
+    -t|--max-len)    shift; MAX_LEN=$1 ;;
     --max-len=*)     MAX_LEN="${1#--max-len=}" ;;
     -u|--uniquify*)  UNIQUIFY=1 ;;
     -k|--keep)       KEEP=1 ;;
@@ -81,7 +81,7 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     -h|--help)       usage_exit 0 ;;
     *) usage_exit ;;
     esac
-    shift
+    shift || usage_exit
 done
 
 # Check the arguments
@@ -149,7 +149,7 @@ clean_up "$FWD_PRIMER"
 
 emit "extract the forward finds: $FWD_SEQIDS"
 [ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || {
-    gawk -bOF '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
+    gawk -bO -F '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
     blastdb_aliastool -seqid_file_in "$FWD_SEQIDS.tmp" -seqid_file_out "$FWD_SEQIDS" &&
     rm -f "$FWD_SEQIDS.tmp" || mv -f "$FWD_SEQIDS.tmp" "$FWD_SEQIDS"
 }
@@ -163,12 +163,12 @@ fi
 clean_up "$FWD_SEQIDS" "$REV_PRIMER"
 
 emit "join the forward and reverse finds: $TSV_OUTPUT"
-gawk -bOF '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MIN_LEN=$MIN_LEN -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
+gawk -bO -F '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MIN_LEN=$MIN_LEN -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
 BEGIN {
     OFS=FS                              # Tab-separated output
     while (getline <FWD_BLAST_CSV == 1) {
         if ($7 + MAX_MIS >= $5) {	# Filter on mismatch limit ($7 is identical count, $5 is query length)
-            fwd[$1][1] = ""		# Tell awk this is a subarray, see awk(1)
+            fwd[$1][1] = ""		# Tell awk this is a subarray, see gawk(1)
             split($0,fwd[$1])
         }
     }

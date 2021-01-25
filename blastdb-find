@@ -108,60 +108,24 @@ SPOS='$1'; APOS='$2'; TPOS='$3'; LPOS='$4'; RPOS='$NF'
 unset ACCID SEQID TAXID REGEX MINLEN MAXLEN FASTA NO_UPDATE USE_TMP
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
     case $1 in
-    --id=*)
-        SEQID="${SEQID:+"$SEQID || "}($SPOS ~ \"${1#--seqid=}\")"
-        ;;
-    -i|--id)
-        shift
-        SEQID="${SEQID:+"$SEQID || "}($SPOS ~ \"$1\")"
-        ;;
-    --taxid=*)
-        TAXID="${TAXID:+"$TAXID || "}($TPOS == \"${1#--taxid=}\")"
-        ;;
-    -t|--taxid)
-        shift
-        TAXID="${TAXID:+"$TAXID || "}($TPOS == \"$1\")"
-        ;;
-    --len=*)
-        MINLEN=${1#--len=}
-        ;;
-    -l|--len|--min-len)
-        shift
-        MINLEN=$1
-        ;;
-    --max-len=*)
-        MAXLEN=${1#--max-len=}
-        ;;
-    -m|--max|--max-len)
-        shift
-        MAXLEN=$1
-        ;;
-    --db=*)
-        DATABASE=${1#--db=}
-        ;;
-    -d|-db|--db)
-        shift
-        DATABASE=$1
-        ;;
-    -f|--fasta)
-        FASTA=1
-        ;;
-    -n|--no-update)
-        NO_UPDATE=1
-        ;;
-    -u|--use-tmp)
-        USE_TMP=1
-        ;;
-    -h|--help)
-        usage_exit 0
-        ;;
-    -v|--verbose)
-        VERBOSE=1
-        ;;
-    *) usage_exit
-        ;;
+    --id=*)             SEQID="${SEQID:+"$SEQID || "}($SPOS ~ \"${1#--seqid=}\")" ;;
+    -i|--id)            shift; SEQID="${SEQID:+"$SEQID || "}($SPOS ~ \"$1\")" ;;
+    --taxid=*)          TAXID="${TAXID:+"$TAXID || "}($TPOS == \"${1#--taxid=}\")" ;;
+    -t|--taxid)         shift; TAXID="${TAXID:+"$TAXID || "}($TPOS == \"$1\")" ;;
+    --len=*)            MINLEN=${1#--len=} ;;
+    -l|--len|--min-len) shift; MINLEN=$1 ;;
+    --max-len=*)        MAXLEN=${1#--max-len=} ;;
+    -m|--max|--max-len) shift; MAXLEN=$1 ;;
+    --db=*)             DATABASE=${1#--db=} ;;
+    -d|-db|--db) shift; DATABASE=$1 ;;
+    -f|--fasta)         FASTA=1 ;;
+    -n|--no-update)     NO_UPDATE=1 ;;
+    -u|--use-tmp)       USE_TMP=1 ;;
+    -h|--help)          usage_exit 0 ;;
+    -v|--verbose)       VERBOSE=1 ;;
+    *) usage_exit ;;
     esac
-    shift
+    shift || usage_exit
 done
 
 # Argument REGEX captures rest of the command-line

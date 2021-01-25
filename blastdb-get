@@ -75,40 +75,18 @@ Usage: $(basename "$0") [OPTIONS] ID ...
 unset HEADER VERBOSE
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\)..*')" = "-" ]; do
     case $1 in
-    --table=*)
-        COLUMNS="${1#--table=}"
-        ;;
-    -t|--table)
-        shift
-        COLUMNS="$1"
-        ;;
-    --sep=*)
-        SEP="${1#--sep=}"
-        ;;
-    -s|--sep)
-        shift
-        SEP="$1"
-        ;;
-    -k|--header)
-        HEADER=1
-        ;;
-    --db=*)
-        DATABASE="${1#--db=}"
-        ;;
-    -d|-db|--db)
-        shift
-        DATABASE="$1"
-        ;;
-    -h|--help)
-        usage_exit 0
-        ;;
-    -v|--verbose)
-        VERBOSE=1
-        ;;
-    *) usage_exit
-        ;;
+    --table=*)     COLUMNS="${1#--table=}" ;;
+    -t|--table)    shift; COLUMNS="$1" ;;
+    --sep=*)       SEP="${1#--sep=}" ;;
+    -s|--sep)      shift; SEP="$1" ;;
+    -k|--header)   HEADER=1 ;;
+    --db=*)        DATABASE="${1#--db=}" ;;
+    -d|-db|--db)   shift; DATABASE="$1" ;;
+    -h|--help)     usage_exit 0 ;;
+    -v|--verbose)  VERBOSE=1 ;;
+    *) usage_exit  ;;
     esac
-    shift
+    shift || usage_exit
 done
 
 # Check arguments

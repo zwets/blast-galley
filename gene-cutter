@@ -81,7 +81,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
   README at github.com/zwets/blast-galley for more information.
 
   The TEMPLATE can be a nucleotide (default) or amino acid sequence (use
-  option --translate).  The target must currently be nucleotides.
+  option --translate).  The TARGET must currently be nucleotides.
 
   OPTIONS
    -d, --database DB   match against sequences in DB rather than in files
@@ -104,57 +104,23 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
 unset DATABASE INFO VERBOSE PROTEIN
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
-    --db=*)
-        DATABASE="${1#--db=}"
-        ;;
-    -d|-db|--db)
-        shift
-        DATABASE="$1"
-        ;;
-    -n|--no-stats)
-        STATS=0
-        ;;
-    -i|--info)
-        shift
-        INFO=$1
-        ;;
-    --info=*)
-        INFO="${1#--info=}"
-        ;;
-    -p|--perc-id*)
-        shift
-        PERC_ID=$1
-        ;;
-    --perc-ident=*)
-        PERC_ID="${1#--perc-ident=}"
-        ;;
-    -e|--e-value)
-        shift
-        E_VALUE=$1
-        ;;
-    --e-value=*)
-        E_VALUE="${1#--e-value=}"
-        ;;
-    -c|--cov*)
-        shift
-        QCOV_PC=$1
-        ;;
-    --coverage=*)
-        QCOV_PC="${1#--coverage=}"
-        ;;
-    -t|--protein)
-        PROTEIN=1
-        ;;
-    -v|--verbose)
-        VERBOSE=1
-        ;;
-    -h|--help)
-        usage_exit 0
-        ;;
-    *) usage_exit
-        ;;
+    --db=*)         DATABASE="${1#--db=}" ;;
+    -d|-db|--db)    shift; DATABASE="$1" ;;
+    -n|--no-stats)  STATS=0 ;;
+    -i|--info)      shift; INFO=$1 ;;
+    --info=*)       INFO="${1#--info=}" ;;
+    -p|--perc-id*)  shift; PERC_ID=$1 ;;
+    --perc-ident=*) PERC_ID="${1#--perc-ident=}" ;;
+    -e|--e-value)   shift; E_VALUE=$1 ;;
+    --e-value=*)    E_VALUE="${1#--e-value=}" ;;
+    -c|--cov*)      shift; QCOV_PC=$1 ;;
+    --coverage=*)   QCOV_PC="${1#--coverage=}" ;;
+    -t|--protein)   PROTEIN=1 ;;
+    -v|--verbose)   VERBOSE=1 ;;
+    -h|--help)      usage_exit 0 ;;
+    *) usage_exit   ;;
     esac
-    shift
+    shift || usage_exit
 done
 
 # Check the arguments
