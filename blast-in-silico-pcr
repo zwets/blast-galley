@@ -58,12 +58,15 @@ Usage: $(basename $0) [OPTIONS] PRIMERS [TARGET]
   sequences in 5'-3' direction.
 
   TARGET can be either a FASTA file or the name of a BLAST database.  When
-  TARGET is omitted or '-', FASTA is read from standard input.
+  TARGET is omitted or '-', FASTA is read from standard input.  Note that
+  the sequence identifiers in FASTA must be unique; use --generate-ids to
+  automate this.
 
   OPTIONS
    -m,--mismatches M  mismatch count allowed per primer (default: $MAX_MIS)
    -b,--min-len B     minimum required selection length (default: $MIN_LEN)
    -t,--max-len T     maximum allowed selection length (default: $MAX_LEN)
+   -g,--generate-ids  generate unique sequence IDs for FASTA target
    -k,--keep          keep and reuse intermediate files
    -v,--verbose       emit progress messages to standard error
 "
@@ -72,7 +75,7 @@ Usage: $(basename $0) [OPTIONS] PRIMERS [TARGET]
 
 # Parse options
 
-unset VERBOSE KEEP
+unset VERBOSE KEEP GENERATE_SEQIDS
 
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
@@ -96,6 +99,9 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
         ;;
     --min-len=*)
         MIN_LEN="${1#--min-len=}"
+        ;;
+    -g|--generate*)
+        GENERATE_SEQIDS=1
         ;;
     -k|--keep)
         KEEP=1
@@ -123,13 +129,25 @@ PRIMERS_FILE="$1"
 [ $(grep -v '^>' "$PRIMERS_FILE" | grep -v '^$' | wc -l) -eq 2 ] || err_exit "file must have two primers: $PRIMERS_FILE"
 
 TARGET="${2:-"-"}"
+
+# Check whether target is stdin or an existing file, then we read FASTA
 if [ "$TARGET" = '-' ] || [ -f "$TARGET" ]; then
-    TMP_BLAST_DIR="$(mktemp -d)"
-    BLAST_DB="$TMP_BLAST_DIR/target"
+
+    TMP_BLASTDB_DIR="$(mktemp -d)"
+    BLAST_DB="$TMP_BLASTDB_DIR/target"
+
     emit "Create temporary BLAST database: $BLAST_DB"
-    makeblastdb -in "$TARGET" -out "$BLAST_DB" -title "target" -dbtype nucl -parse_seqids >/dev/null ||
+    if [ -n "$GENERATE_SEQIDS" ]; then
+        gawk -bO '/^>/ { print ">U" NR "_" substr($0,2) } /^[^>]/' "$TARGET"
+    else
+        cat "$TARGET"
+    fi | 
+    makeblastdb -out "$BLAST_DB" -title "target" -dbtype nucl -parse_seqids >/dev/null ||
         err_exit "failed to create BLAST database: $BLAST_DB"
-else # if $2 is not a file, then assume it is a BLAST database
+    blastdbcmd -db "$BLAST_DB" -info >/dev/null || err_exit "failed to create temporary BLAST database: $TARGET"
+
+ # Else we assume TARGET is the name or path of a BLAST database
+else
     BLAST_DB="$TARGET"
     emit "Check that TARGET is a BLAST database: $TARGET"
     blastdbcmd -db "$BLAST_DB" -info >/dev/null || err_exit "target is neither a file nor a BLAST database: $TARGET"
@@ -173,7 +191,7 @@ emit "BLAST the reverse primer against the sequences from the forward primer bla
     err_exit "BLAST of reverse primer against database $BLAST_DB failed"
 fi
 
-[ ! -d "$TMP_BLAST_DIR" ] || rm -rf "$TMP_BLAST_DIR"
+[ ! -d "$TMP_BLASTDB_DIR" ] || rm -rf "$TMP_BLASTDB_DIR"
 clean_up "$FWD_SEQIDS" "$REV_PRIMER"
 
 emit "Join the two BLAST results"
