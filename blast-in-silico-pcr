@@ -21,7 +21,6 @@
 # Defaults
 
 export LC_ALL="C"
-BLAST_DB=nt
 MIN_LEN=1
 MAX_LEN=5000
 MAX_MIS=2
@@ -50,18 +49,18 @@ clean_up() {
 # Function to show usage information and exit
 usage_exit() {
     echo "
-Usage: $(basename $0) [OPTIONS] FILE
+Usage: $(basename $0) [OPTIONS] PRIMERS [TARGET]
 
-  Perform in silico PCR for primer pair in FILE against BLAST database DB.
+  Perform in silico PCR for primer pair PRIMERS against FASTA file or BLAST
+  database TARGET.
 
-  FILE must be FASTA format with one line for the forward primer in 5' to 3'
-  direction, and one line for the reverse primer in 5' to 3' direction.
+  PRIMERS must be a FASTA format file with the forward and reverse primer
+  sequences in 5'-3' direction.
 
-  BLAST database DB can be produced from a fasta file using makeblastdb:
-  makeblastdb -in {FASTA_FILE} -out {DB_FILE} -dbtype nucl -parse_seqids
+  TARGET can be either a FASTA file or the name of a BLAST database.  When
+  TARGET is omitted or '-', FASTA is read from standard input.
 
   OPTIONS
-   -d,--database DB   BLAST against database DB (default: $BLAST_DB)
    -m,--mismatches M  mismatch count allowed per primer (default: $MAX_MIS)
    -b,--min-len B     minimum required selection length (default: $MIN_LEN)
    -t,--max-len T     maximum allowed selection length (default: $MAX_LEN)
@@ -98,10 +97,6 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     --min-len=*)
         MIN_LEN="${1#--min-len=}"
         ;;
-    -d|-db|--db)
-        shift || usage_exit
-        BLAST_DB=$1
-        ;;
     -k|--keep)
         KEEP=1
         ;;
@@ -119,13 +114,26 @@ done
 
 # Check the argument
 
-[ $# -eq 1 ] || usage_exit
+[ $# -ge 1 ] || usage_exit
 [ $MIN_LEN -gt 0 ] || err_exit "minimum length must be non-zero positive"
 [ $MAX_LEN -ge $MIN_LEN ] || err_exit "maximum length must not be smaller than minimum length"
 
 PRIMERS_FILE="$1"
 [ -r "$PRIMERS_FILE" ] || err_exit "cannot read file: $PRIMERS_FILE"
 [ $(grep -v '^>' "$PRIMERS_FILE" | grep -v '^$' | wc -l) -eq 2 ] || err_exit "file must have two primers: $PRIMERS_FILE"
+
+TARGET="${2:-"-"}"
+if [ "$TARGET" = '-' ] || [ -f "$TARGET" ]; then
+    TMP_BLAST_DIR="$(mktemp -d)"
+    BLAST_DB="$TMP_BLAST_DIR/target"
+    emit "Create temporary BLAST database: $BLAST_DB"
+    makeblastdb -in "$TARGET" -out "$BLAST_DB" -title "target" -dbtype nucl -parse_seqids >/dev/null ||
+        err_exit "failed to create BLAST database: $BLAST_DB"
+else # if $2 is not a file, then assume it is a BLAST database
+    BLAST_DB="$TARGET"
+    emit "Check that TARGET is a BLAST database: $TARGET"
+    blastdbcmd -db "$BLAST_DB" -info >/dev/null || err_exit "target is neither a file nor a BLAST database: $TARGET"
+fi
 
 # Set up variables
 
@@ -154,7 +162,7 @@ clean_up "$FWD_PRIMER"
 
 emit "Extract the seqid list: $FWD_SEQIDS"
 [ -n "$KEEP" -a -r "$FWD_SEQIDS" ] || { 
-    awk -F '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
+    gawk -bOF '\t' '{print $1}' "$FWD_BLAST" | sort -u > "$FWD_SEQIDS.tmp" &&
     blastdb_aliastool -seqid_file_in "$FWD_SEQIDS.tmp" -seqid_file_out "$FWD_SEQIDS" && 
     rm -f "$FWD_SEQIDS.tmp" || mv -f "$FWD_SEQIDS.tmp" "$FWD_SEQIDS"
 }
@@ -165,10 +173,11 @@ emit "BLAST the reverse primer against the sequences from the forward primer bla
     err_exit "BLAST of reverse primer against database $BLAST_DB failed"
 fi
 
+[ ! -d "$TMP_BLAST_DIR" ] || rm -rf "$TMP_BLAST_DIR"
 clean_up "$FWD_SEQIDS" "$REV_PRIMER"
 
 emit "Join the two BLAST results"
-awk -b -O -F '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MIN_LEN=$MIN_LEN -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
+gawk -bOF '\t' -v FWD_BLAST_CSV="$FWD_BLAST" -v MIN_LEN=$MIN_LEN -v MAX_LEN=$MAX_LEN -v MAX_MIS=$MAX_MIS '
 BEGIN {
     OFS=FS                              # Tab-separated output
     while (getline <FWD_BLAST_CSV == 1) {
