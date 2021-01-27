@@ -24,6 +24,7 @@ PERC_ID=90.0
 E_VALUE=0.01
 QCOV_PC=60
 STATS=1
+TAB="$(printf '\t')"
 
 # Function to emit information to standard error if VERBOSE is set
 emit() {
@@ -55,12 +56,15 @@ blast_query() {
 
 # Function to process the BLAST output into FASTA
 process_output() {
-gawk -bOF '\t' -v INFO="${INFO:-Segment}" -v STATS=$STATS '{
+sort -t "$TAB" -k11,11nr |
+if [ $BEST ]; then head -1; else cat; fi |
+awk -F "$TAB" -v INFO="${INFO:-Segment}" -v STATS=$STATS '{
     printf ">lcl|cut%04d %s from %s %s matching %s", NR, INFO, $5, $18, $1
     if (STATS) printf " (len %d/%d %.1f%, pos %d..%d; e=%.3f, p=%.1f%, b=%s; i=%d, g=%d)", $8, $4, $13, $6, $7, $9, $10, $11, $14, $15
     printf "\n"
     # We need to strip the dashed deletions
-    print gensub("-","","g",$NF)
+    gsub("-","",$NF)
+    print $NF
   }'
 }
 
@@ -73,15 +77,17 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
   
   TEMPLATE is a FASTA file.  TARGETs are either FASTA files or sequence
   identifiers in BLAST database DB.  When no TARGET is specified, reads
-  FASTA from standard input, or with option --database searches all
-  sequences in DB.
+  FASTA from stdin, or with option --database searches all of DB.
 
-  Matching segments are written to stdout as FASTA.  Note that matching
-  segments that straddle two or more contigs will not be found.  See the
-  README at github.com/zwets/blast-galley for more information.
+  Matching segments are written to stdout as FASTA, in decreasting order
+  of bitscore.  With option --best, only the top scoring match is output.
+
+  Note that matching segments that straddle two or more contigs will not
+  be found.  Read the README at https://github.com/zwets/blast-galley.
 
   The TEMPLATE can be a nucleotide (default) or amino acid sequence (use
-  option --translate).  The TARGET must currently be nucleotides.
+  option --translate), or multiple sequences.  The TARGET must currently
+  be nucleotides.
 
   OPTIONS
    -d, --database DB   match against sequences in DB rather than in files
@@ -89,6 +95,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
    -e, --e-value N     e-value threshold (default: $E_VALUE)
    -c, --coverage N    query coverage percentage threshold (default: $QCOV_PC)
    -t, --protein       do a protein search against nucleotide database (tblastn)
+   -b, --best          output only the best match (by bitscore)
    -i, --info TEXT     add TEXT to FASTA headers of generated sequences
    -n, --no-stats      omit match statistics from the FASTA headers
    -v, --verbose       emit progress messages to standard error
@@ -101,7 +108,7 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
 
 # Parse options
 
-unset DATABASE INFO VERBOSE PROTEIN
+unset DATABASE INFO VERBOSE PROTEIN BEST
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
     --db=*)         DATABASE="${1#--db=}" ;;
@@ -115,6 +122,7 @@ while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     --e-value=*)    E_VALUE="${1#--e-value=}" ;;
     -c|--cov*)      shift; QCOV_PC=$1 ;;
     --coverage=*)   QCOV_PC="${1#--coverage=}" ;;
+    -b|--best)      BEST=1 ;;
     -t|--protein)   PROTEIN=1 ;;
     -v|--verbose)   VERBOSE=1 ;;
     -h|--help)      usage_exit 0 ;;
@@ -130,7 +138,6 @@ done
 TEMPLATE_FILE="$1"
 shift
 [ -r "$TEMPLATE_FILE" ] || err_exit "cannot read file: $TEMPLATE_FILE"
-[ $(grep '^>' "$TEMPLATE_FILE" | wc -l) -eq 1 ] || err_exit "file must have one sequence: $TEMPLATE_FILE"
 
 # Perform the blast(s)
 
