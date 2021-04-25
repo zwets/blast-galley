@@ -162,7 +162,7 @@ fi
 TSV_OUTPUT="$WORK_DIR/pcr.matches.tsv"
 touch "$TSV_OUTPUT"
 
-BLAST_OUTFMT="7 sacc sstrand sstart send qlen length nident mismatch qacc staxids sscinames slen stitle"
+BLAST_OUTFMT="7 sacc sstrand sstart send qlen length nident mismatch qacc qstart qend slen stitle"
 
 # Loop over the pairs
 
@@ -179,7 +179,7 @@ while [ $((++PAIR)) -le $((PRIMER_COUNT/2)) ]; do
     get_fasta_seq $((2*PAIR-1)) "$PRIMERS_FILE" >"$FWD_PRIMER"
 
     emit "BLAST the forward primer: $FWD_BLAST"
-    blastn -task blastn-short -db "$BLAST_DB" -query "$FWD_PRIMER" -ungapped -outfmt "$BLAST_OUTFMT" | grep -v '^#' >"$FWD_BLAST" || {
+    blastn -task blastn-short -db "$BLAST_DB" -query "$FWD_PRIMER" -ungapped -word_size 4 -outfmt "$BLAST_OUTFMT" | grep -v '^#' >"$FWD_BLAST" || {
         warn_msg "BLAST of forward primer against database $BLAST_DB failed"
         continue
     }
@@ -193,7 +193,7 @@ while [ $((++PAIR)) -le $((PRIMER_COUNT/2)) ]; do
     get_fasta_seq $((2*PAIR)) "$PRIMERS_FILE" >"$REV_PRIMER"
 
     emit "BLAST the reverse primers: $REV_BLAST"
-    blastn -task blastn-short -db "$BLAST_DB" -query "$REV_PRIMER" -seqidlist "$FWD_SEQIDS" -ungapped -outfmt "$BLAST_OUTFMT" | grep -v '^#' > "$REV_BLAST" || {
+    blastn -task blastn-short -db "$BLAST_DB" -query "$REV_PRIMER" -seqidlist "$FWD_SEQIDS" -ungapped -word_size 4 -outfmt "$BLAST_OUTFMT" | grep -v '^#' > "$REV_BLAST" || {
         warn_msg "BLAST of reverse primer against database $BLAST_DB failed"
         continue
     }
@@ -219,7 +219,7 @@ while [ $((++PAIR)) -le $((PRIMER_COUNT/2)) ]; do
             len = 1 + epos - spos
             # Select if length not negative (PCR will not meet), and within length limit
             if (len >= MIN_LEN && len <= MAX_LEN) {
-                print $1, fwd[$1][2], spos, epos, len, fwd[$1][5] - fwd[$1][7], $5 - $7, fwd[$1][9], $9, $10, $11, $12
+                print $1, fwd[$1][2], spos, epos, len, fwd[$1][5] - fwd[$1][7], $5 - $7, fwd[$1][9], $9, fwd[$1][10] "-" fwd[$1][11] "/" fwd[$1][5], $10 "-" $11 "/" $5, $12
             }
         }
     }
@@ -227,9 +227,9 @@ while [ $((++PAIR)) -le $((PRIMER_COUNT/2)) ]; do
 done
 
 emit "retrieve the product sequences"
-cat "$TSV_OUTPUT" | while read CTG STR FROM TO LEN FWD_MM REV_MM FWD_PR REV_PR REST; do
+cat "$TSV_OUTPUT" | while read CTG STR FROM TO LEN FWD_MM REV_MM FWD_PR REV_PR FWD_PM REV_PM REST; do
     blastdbcmd -db "$BLAST_DB" -entry "$CTG" -range "$FROM-$TO" |
-    gawk -bO -v PROD=$((++PROD)) -v STRAND="$STR" -v I1="primer-pair=$FWD_PR-$REV_PR mismatches=$FWD_MM+$REV_MM" -v I2="[contig=$CTG; pos=$FROM-$TO; len=$LEN; strand=$STR]" '
+    gawk -bO -v PROD=$((++PROD)) -v STRAND="$STR" -v I1="primer-pair=$FWD_PR-$REV_PR fwd-match=$FWD_PM rev-match=$REV_PM mismatches=$FWD_MM+$REV_MM" -v I2="[contig=$CTG; pos=$FROM-$TO; len=$LEN; strand=$STR]" '
         NR==1 { print ">pcr_prod_" PROD " " I1 " " substr($0,2) " " I2}
         NR!=1 { SEQ = SEQ $0 }
         END {
