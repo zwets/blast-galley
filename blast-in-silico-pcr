@@ -228,10 +228,9 @@ done
 
 emit "retrieve the product sequences"
 cat "$TSV_OUTPUT" | while read CTG STR FROM TO LEN FWD_MM REV_MM FWD_PR REV_PR REST; do
-    NPROD=$((N_PROD+1))
     blastdbcmd -db "$BLAST_DB" -entry "$CTG" -range "$FROM-$TO" |
-    gawk -bO -v NPROD="$NPROD" -v STRAND="$STR" -v I1="primer-pair=$FWD_PR-$REV_PR mismatches=$FWD_MM+$REV_MM" -v I2="[contig=$CTG; pos=$FROM-$TO; len=$LEN; strand=$STR]" '
-        NR==1 { print ">pcr_prod_" NPROD " " I1 " " substr($0,2) " " I2}
+    gawk -bO -v PROD=$((++PROD)) -v STRAND="$STR" -v I1="primer-pair=$FWD_PR-$REV_PR mismatches=$FWD_MM+$REV_MM" -v I2="[contig=$CTG; pos=$FROM-$TO; len=$LEN; strand=$STR]" '
+        NR==1 { print ">pcr_prod_" PROD " " I1 " " substr($0,2) " " I2}
         NR!=1 { SEQ = SEQ $0 }
         END {
           if (STRAND == "plus") print SEQ; else {
