@@ -8,12 +8,12 @@
 #
 
 # Work file
-TMPFILE="/tmp/$(basename "$0").$$"
+TMPFILE="$(mktemp)"
 
 # Defaults
 TASK="n"
 DATABASE="nt"
-THREADS=$(($(nproc) - 1))
+THREADS=$(nproc --ignore=2)
 [ $THREADS != 0 ] || THREADS=1
 
 # Cleanup and exit at first error to occur
@@ -22,15 +22,10 @@ trap cleanup EXIT
 RETVAL=1
 
 # Function to write the arguments to stderr if VERBOSE is set
-emit() {
-    if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi
-}
+emit() { if [ $VERBOSE ]; then echo "$(basename "$0"): $*" >&2; fi; }
 
 # Function to exit this script with an error message on stderr
-err_exit() {
-    echo "$(basename "$0"): $*" >&2
-    exit 1
-}
+err_exit() { echo "$(basename "$0"): $*" >&2; exit 1; }
 
 # Function to cleanup at exit, trapped on EXIT
 cleanup() {
@@ -51,7 +46,6 @@ Usage: $(basename "$0") [OPTIONS] [SEQUENCE]
   Options
    -t, --task TASK        n, s, m, d (default: $TASK)
    -d, --db DB            database (default: $DATABASE)
-   -b, --blast-opts OPTS  pass additional OPTS to blast
    -v, --verbose          verbose output
    -h, --help             this help
 " >&2
@@ -59,39 +53,25 @@ Usage: $(basename "$0") [OPTIONS] [SEQUENCE]
     exit
 }
 
+# Defaults
+
+BLAST_FMT='qseqid qlen length qcovs pident bitscore sacc staxid ssciname slen stitle'
+#echo "$BLAST_FMT" | tr ' ' '\t'
+BLAST_OPTS="-evalue 0.000001 -perc_identity 80 -qcov_hsp_perc 75 -max_hsps 1 -best_hit_overhang 0.1 -best_hit_score_edge 0.1 -subject_besthit -outfmt '6 $BLAST_FMT'"
+
 # Parse options
 
 while [ $# -ne 0 -a "$(expr "$1" : '\(.\).*')" = "-" ]; do
     case $1 in
-    --task=*)
-        TASK=${1#--task=}
-        ;;
-    -t|--task)
-        shift
-        TASK=$1
-        ;;
-    --db=*)
-        DATABASE=${1#--db=}
-        ;;
-    -d|--db|--database)
-        shift
-        DATABASE=$1
-        ;;
-    --blast-opts=*)
-        BLAST_OPTS="${1#--blast-opts=}"
-        ;;
-    -b|--blast*)
-        shift
-        BLAST_OPTS="$1"
-        ;;
-    -h|--help)
-        usage_exit 0
-        ;;
-    -v|--verbose)
-        VERBOSE=1
-        ;;
-    *) usage_exit
-        ;;
+    --task=*)        TASK=${1#--task=} ;;
+    -t|--task)       shift && TASK=$1 ;;
+    --db=*)          DATABASE=${1#--db=} ;;
+    -d|--db)         shift && DATABASE=$1 ;;
+    --blast-opts=*)  BLAST_OPTS="${1#--blast-opts=}" ;;
+    -b|--blast*)     shift && BLAST_OPTS="$1" ;;
+    -h|--help)       usage_exit 0 ;;
+    -v|--verbose)    VERBOSE=1 ;;
+    *) usage_exit    ;;
     esac
     shift
 done
