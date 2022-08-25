@@ -142,9 +142,10 @@ if [ "$TARGET" = '-' ] || [ -f "$TARGET" ]; then
     # TARGET is stdin or a file, create temp blast database
     BLAST_DB="$WORK_DIR/target"
     emit "create temporary BLAST database: $BLAST_DB"
-    [ -n "$UNIQUIFY" ] &&
-    gawk -bO '/^>/ { print ">U" NR "_" substr($0,2) } /^[^>]/' "$TARGET" ||
-    cat "$TARGET" |
+    { [ -n "$UNIQUIFY" ] &&
+      gawk -bO '/^>/ { print ">U" NR "_" substr($0,2) } /^[^>]/' "$TARGET" ||
+      cat "$TARGET" 
+    } |
     makeblastdb -out "$BLAST_DB" -title "target" -dbtype nucl -parse_seqids >/dev/null ||
         err_exit "failed to create BLAST database: $BLAST_DB"
 
