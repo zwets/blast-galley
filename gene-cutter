@@ -86,17 +86,17 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
   be found.  Read the README at https://github.com/zwets/blast-galley.
 
   The TEMPLATE can be a nucleotide (default) or amino acid sequence (use
-  option --translate), or multiple sequences.  The TARGET must currently
+  option --protein), or multiple sequences.  The TARGET must currently
   be nucleotides.
 
   OPTIONS
-   -d, --database DB   match against sequences in DB rather than in files
-   -p, --perc-ident N  percentage identity threshold (default: $PERC_ID)
-   -e, --e-value N     e-value threshold (default: $E_VALUE)
-   -c, --coverage N    query coverage percentage threshold (default: $QCOV_PC)
+   -d, --database=DB   match against sequences in DB rather than in files
+   -p, --perc-ident=N  percentage identity threshold (default: $PERC_ID)
+   -e, --e-value=N     e-value threshold (default: $E_VALUE)
+   -c, --coverage=N    query coverage percentage threshold (default: $QCOV_PC)
    -t, --protein       do a protein search against nucleotide database (tblastn)
    -b, --best          output only the best match (by bitscore)
-   -i, --info TEXT     add TEXT to FASTA headers of generated sequences
+   -i, --info=TEXT     add TEXT to FASTA headers of generated sequences
    -n, --no-stats      omit match statistics from the FASTA headers
    -v, --verbose       emit progress messages to standard error
 
@@ -111,21 +111,21 @@ Usage: $(basename $0) [OPTIONS] TEMPLATE [TARGET ...]
 unset DATABASE INFO VERBOSE PROTEIN BEST
 while [ $# -ne 0 -a "$(expr "$1" : '\(.[0-9]*\).*')" = "-" ]; do
     case $1 in
-    --db=*)         DATABASE="${1#--db=}" ;;
-    -d|-db|--db)    shift; DATABASE="$1" ;;
-    -n|--no-stats)  STATS=0 ;;
-    -i|--info)      shift; INFO=$1 ;;
-    --info=*)       INFO="${1#--info=}" ;;
-    -p|--perc-id*)  shift; PERC_ID=$1 ;;
-    --perc-ident=*) PERC_ID="${1#--perc-ident=}" ;;
-    -e|--e-value)   shift; E_VALUE=$1 ;;
-    --e-value=*)    E_VALUE="${1#--e-value=}" ;;
-    -c|--cov*)      shift; QCOV_PC=$1 ;;
-    --coverage=*)   QCOV_PC="${1#--coverage=}" ;;
-    -b|--best)      BEST=1 ;;
-    -t|--protein)   PROTEIN=1 ;;
-    -v|--verbose)   VERBOSE=1 ;;
-    -h|--help)      usage_exit 0 ;;
+    --d*=*)    DATABASE="${1#--d*=}" ;;
+    -d|--d*)   shift; DATABASE="$1" ;;
+    -n|--n*)   STATS=0 ;;
+    --i*=*)    INFO="${1#--i*=}" ;;
+    -i|--i*)   shift; INFO=$1 ;;
+    --pe*=*)   PERC_ID="${1#--pe*}" ;;
+    -p|--pe*)  shift; PERC_ID=$1 ;;
+    --e*=*)    E_VALUE="${1#--e*=}" ;;
+    -e|--e*)   shift; E_VALUE=$1 ;;
+    --c*=*)    QCOV_PC="${1#--c*=}" ;;
+    -c|--c*)   shift; QCOV_PC=$1 ;;
+    -b|--b*)   BEST=1 ;;
+    -t|--pr*)  PROTEIN=1 ;;
+    -v|--v*)   VERBOSE=1 ;;
+    -h|--h*)   usage_exit 0 ;;
     *) usage_exit   ;;
     esac
     shift || usage_exit
